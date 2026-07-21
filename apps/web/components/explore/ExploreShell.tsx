@@ -61,6 +61,13 @@ export default function ExploreShell({ digest }: { digest: string }) {
           {analysis.manifest.title || "Untitled paper"}
         </h1>
 
+        <a
+          href={`/workspace/${digest}`}
+          className="rounded px-2 py-1 text-sm hover:bg-neutral-200 dark:hover:bg-neutral-800"
+        >
+          Workspace
+        </a>
+
         <nav className="ml-auto flex gap-1" aria-label="Exploration views">
           {TABS.map(({ key, label }) => (
             <button

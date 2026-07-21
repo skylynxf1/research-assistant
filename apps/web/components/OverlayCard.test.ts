@@ -132,9 +132,13 @@ describe("transitionPopup", () => {
 });
 
 describe("OverlayCard", () => {
-  const renderCard = (dark: boolean, cardAsset = asset) => renderToStaticMarkup(createElement(OverlayCard, {
+  const renderCard = (
+    dark: boolean,
+    cardAsset = asset,
+    cardPopup = popup,
+  ) => renderToStaticMarkup(createElement(OverlayCard, {
     asset: cardAsset,
-    popup,
+    popup: cardPopup,
     dark,
     mentions: [{ assetId: "fig-1", kind: "figure", number: "1", page: 4, text: "Figure 1", rect: null, index: 0 }],
     currentPage: 2,
@@ -165,6 +169,14 @@ describe("OverlayCard", () => {
     expect(markup).toContain("p.5");
   });
 
+  it("gives the pin toggle a mode-aware accessible name", () => {
+    const openMarkup = renderCard(false);
+    const pinnedMarkup = renderCard(false, asset, { ...popup, mode: "pinned" });
+
+    expect(openMarkup).toContain('aria-label="Pin Figure 1"');
+    expect(pinnedMarkup).toContain('aria-label="Unpin Figure 1"');
+  });
+
   it("keeps variable figure content inside the 336px collision-model height", () => {
     const markup = renderCard(false, {
       ...asset,
@@ -176,6 +188,9 @@ describe("OverlayCard", () => {
     expect(markup).toContain("flex min-h-[96px] flex-1");
     expect(markup).toContain("h-full max-h-full w-full bg-white object-contain");
     expect(markup).toContain("max-h-[104px] min-h-0 shrink overflow-y-auto");
+    expect(markup).toContain('aria-label="Figure 1 caption and actions"');
+    expect(markup).toContain('tabindex="0"');
+    expect(markup).toContain("focus-visible:outline-2 focus-visible:outline-[#3b5bdb]");
     expect(markup).toContain("shrink-0 overflow-x-auto");
     expect(markup).toContain("More caption text.");
   });
@@ -184,7 +199,9 @@ describe("OverlayCard", () => {
     const markup = renderCard(false);
 
     expect(markup).toContain("border-white/95 bg-white/70");
+    expect(markup).toContain("tracking-[0.14em] text-[#3b5bdb]");
     expect(markup).toContain("text-slate-700");
+    expect(markup).toContain("font-semibold text-[#2f4ac2]");
     expect(markup).not.toContain("dark:");
     expect(markup).toContain("rounded-[12px] bg-white");
     expect(markup).toContain("w-full bg-white object-contain");
@@ -196,7 +213,9 @@ describe("OverlayCard", () => {
     const markup = renderCard(true);
 
     expect(markup).toContain("border-white/15 bg-slate-900/75");
+    expect(markup).toContain("tracking-[0.14em] text-indigo-300");
     expect(markup).toContain("text-slate-200");
+    expect(markup).toContain("font-semibold text-indigo-200");
     expect(markup).toContain("border-white/10");
     expect(markup).not.toContain("dark:");
     expect(markup).toContain("rounded-[12px] bg-white");

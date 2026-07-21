@@ -203,7 +203,7 @@ export default function OverlayCard(props: Props) {
           drag.current = null;
         }}
       >
-        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#3b5bdb]">
+        <span className={`text-[11px] font-semibold uppercase tracking-[0.14em] ${props.dark ? "text-indigo-300" : "text-[#3b5bdb]"}`}>
           {props.asset.label}
         </span>
         <span className="text-[11px] text-slate-400">· page {props.asset.page + 1}</span>
@@ -218,6 +218,7 @@ export default function OverlayCard(props: Props) {
         <button
           type="button"
           aria-pressed={popup.mode === "pinned"}
+          aria-label={`${popup.mode === "pinned" ? "Unpin" : "Pin"} ${props.asset.label}`}
           onPointerDown={onControlPointerDown}
           onClick={() => onPin(popup.mode !== "pinned")}
           className={`grid h-[26px] w-[26px] place-items-center rounded-lg aria-pressed:bg-[#3b5bdb] aria-pressed:text-white ${
@@ -251,14 +252,19 @@ export default function OverlayCard(props: Props) {
         />
       </div>
 
-      <div className="max-h-[104px] min-h-0 shrink overflow-y-auto px-[18px] pb-3 pt-2">
+      <div
+        role="region"
+        aria-label={`${props.asset.label} caption and actions`}
+        tabIndex={0}
+        className="max-h-[104px] min-h-0 shrink overflow-y-auto px-[18px] pb-3 pt-2 focus-visible:outline-2 focus-visible:outline-[#3b5bdb]"
+      >
         <p className={`text-[12.5px] leading-[1.55] ${props.dark ? "text-slate-200" : "text-slate-700"}`}>
           {props.asset.caption}
         </p>
         <button
           type="button"
           onClick={onJumpToAsset}
-          className="mt-2 inline-flex items-center gap-1 rounded-full border border-[#3b5bdb]/20 bg-[#3b5bdb]/10 px-3 py-1 text-[12.5px] font-semibold text-[#2f4ac2] hover:bg-[#3b5bdb]/20"
+          className={`mt-2 inline-flex items-center gap-1 rounded-full border border-[#3b5bdb]/20 bg-[#3b5bdb]/10 px-3 py-1 text-[12.5px] font-semibold ${props.dark ? "text-indigo-200" : "text-[#2f4ac2]"} hover:bg-[#3b5bdb]/20`}
         >
           Jump to {props.asset.label}
           <ArrowUpRight size={14} aria-hidden="true" />

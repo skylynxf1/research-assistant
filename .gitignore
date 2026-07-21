@@ -27,3 +27,6 @@ Thumbs.db
 # Local screenshot/debug artifacts
 .playwright-mcp/
 *.local.png
+
+# Isolated feature workspaces
+.worktrees/

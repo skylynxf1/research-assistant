@@ -1,0 +1,196 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "https://marginalia.local/schema/manifest.schema.json",
+  "title": "Manifest",
+  "description": "The single artifact the Marginalia extraction pipeline produces for one PDF. The client is a dumb renderer over this document (spec D3). Note there is deliberately no `mentions` array: mention detection is client-side (plan deviation 1).",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "doc_id",
+    "source",
+    "title",
+    "page_count",
+    "pages",
+    "assets",
+    "references",
+    "sections",
+    "extraction"
+  ],
+  "properties": {
+    "doc_id": {
+      "type": "string",
+      "description": "Content hash of the PDF bytes (spec D1). Format: sha256:<64 hex chars>.",
+      "pattern": "^sha256:[0-9a-f]{64}$"
+    },
+    "source": { "$ref": "#/definitions/Source" },
+    "title": {
+      "type": "string",
+      "description": "From PDF metadata or a first-page heuristic. Empty string when unknown."
+    },
+    "page_count": { "type": "integer", "minimum": 0 },
+    "pages": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Page" }
+    },
+    "assets": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Asset" }
+    },
+    "references": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Reference" }
+    },
+    "sections": {
+      "type": "array",
+      "items": { "$ref": "#/definitions/Section" }
+    },
+    "extraction": { "$ref": "#/definitions/Extraction" }
+  },
+  "definitions": {
+    "BBox": {
+      "type": "array",
+      "description": "Normalized [x0, y0, x1, y1] in [0,1] with origin at the TOP-LEFT of the page. PDF native coordinates are bottom-left origin; the conversion happens exactly once, in extract/geometry.py.",
+      "items": { "type": "number", "minimum": 0, "maximum": 1 },
+      "minItems": 4,
+      "maxItems": 4
+    },
+    "Source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["type", "arxiv_id"],
+      "properties": {
+        "type": { "type": "string", "enum": ["upload", "arxiv"] },
+        "arxiv_id": {
+          "type": ["string", "null"],
+          "description": "e.g. 1706.03762v7. Null for uploads."
+        }
+      }
+    },
+    "Page": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["index", "width_pt", "height_pt"],
+      "properties": {
+        "index": { "type": "integer", "minimum": 0, "description": "0-based." },
+        "width_pt": { "type": "number", "exclusiveMinimum": 0 },
+        "height_pt": { "type": "number", "exclusiveMinimum": 0 }
+      }
+    },
+    "Asset": {
+      "type": "object",
+      "description": "A figure, table, or algorithm extracted from the paper.",
+      "additionalProperties": false,
+      "required": [
+        "asset_id",
+        "kind",
+        "label",
+        "number",
+        "page",
+        "bbox",
+        "caption",
+        "caption_bbox",
+        "image_url",
+        "image_width",
+        "parent_id"
+      ],
+      "properties": {
+        "asset_id": {
+          "type": "string",
+          "description": "Stable id, e.g. fig-1, tab-2, fig-3a.",
+          "pattern": "^[a-z]+-[A-Za-z0-9.]+$"
+        },
+        "kind": {
+          "type": "string",
+          "enum": ["figure", "table", "algorithm", "equation"]
+        },
+        "label": {
+          "type": "string",
+          "description": "Normalized display label, e.g. 'Figure 1'."
+        },
+        "number": {
+          "type": "string",
+          "description": "Surface number: '1', '2a', 'S3', 'A.1'. String because appendix numbering is not integral."
+        },
+        "page": { "type": "integer", "minimum": 0, "description": "0-based." },
+        "bbox": { "$ref": "#/definitions/BBox" },
+        "caption": { "type": "string" },
+        "caption_bbox": {
+          "oneOf": [{ "$ref": "#/definitions/BBox" }, { "type": "null" }],
+          "description": "Used client-side to suppress caption self-reference mentions. Null only if the caption position is unknown."
+        },
+        "image_url": {
+          "type": "string",
+          "description": "Path to the rendered crop, e.g. /blob/<hash>/crops/fig-1.png."
+        },
+        "image_width": {
+          "type": "integer",
+          "minimum": 1,
+          "description": "Pixel width of the crop, rendered at 300 DPI."
+        },
+        "parent_id": {
+          "type": ["string", "null"],
+          "description": "Set on subfigures: fig-3a has parent_id fig-3 (plan decision on spec open question 12.2)."
+        }
+      }
+    },
+    "Reference": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "ref_id",
+        "marker",
+        "raw",
+        "title",
+        "authors",
+        "year",
+        "arxiv_id",
+        "openable"
+      ],
+      "properties": {
+        "ref_id": { "type": "string", "pattern": "^ref-[A-Za-z0-9.-]+$" },
+        "marker": {
+          "type": "string",
+          "description": "Inline marker that points here: '12' for numeric styles, 'Vaswani et al., 2017' for author-year."
+        },
+        "raw": {
+          "type": "string",
+          "description": "The full reference string as it appears in the bibliography."
+        },
+        "title": { "type": ["string", "null"] },
+        "authors": { "type": "array", "items": { "type": "string" } },
+        "year": { "type": ["integer", "null"] },
+        "arxiv_id": {
+          "type": ["string", "null"],
+          "description": "Null when unresolved. Never render an open affordance in that case."
+        },
+        "openable": {
+          "type": "boolean",
+          "description": "True only when the cited paper can actually be fetched and rendered side-by-side. Precision-first: never render a dead button."
+        }
+      }
+    },
+    "Section": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["title", "page", "level"],
+      "properties": {
+        "title": { "type": "string" },
+        "page": { "type": "integer", "minimum": 0, "description": "0-based." },
+        "level": { "type": "integer", "minimum": 1 }
+      }
+    },
+    "Extraction": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["version", "figure_backend", "warnings"],
+      "properties": {
+        "version": { "type": "string", "pattern": "^\\d+\\.\\d+\\.\\d+$" },
+        "figure_backend": {
+          "type": "string",
+          "enum": ["caption-heuristic", "docling", "pdffigures2"]
+        },
+        "warnings": { "type": "array", "items": { "type": "string" } }
+      }
+    }
+  }
+}

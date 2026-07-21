@@ -1,0 +1,28 @@
+{
+  "name": "web",
+  "version": "0.1.0",
+  "private": true,
+  "scripts": {
+    "dev": "next dev",
+    "build": "next build",
+    "start": "next start",
+    "test": "vitest run",
+    "gen:schema": "json2ts ../../packages/schema/manifest.schema.json -o ../../packages/schema/manifest.ts --bannerComment \"/* GENERATED from manifest.schema.json by 'npm run gen:schema'. Do not edit by hand. */\""
+  },
+  "dependencies": {
+    "next": "16.2.10",
+    "pdfjs-dist": "^6.1.200",
+    "react": "19.2.4",
+    "react-dom": "19.2.4"
+  },
+  "devDependencies": {
+    "@tailwindcss/postcss": "^4",
+    "@types/node": "^20",
+    "@types/react": "^19",
+    "@types/react-dom": "^19",
+    "json-schema-to-typescript": "^15.0.4",
+    "tailwindcss": "^4",
+    "typescript": "^5",
+    "vitest": "^4.1.10"
+  }
+}

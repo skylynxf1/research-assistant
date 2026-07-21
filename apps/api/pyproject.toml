@@ -13,7 +13,15 @@ dependencies = [
 ]
 
 [dependency-groups]
-dev = ["pytest>=8.0"]
+dev = [
+    "jsonschema>=4.26.0",
+    "pytest>=8.0",
+    "pytest-asyncio>=1.4.0",
+]
 
 [tool.pytest.ini_options]
 testpaths = ["tests"]
+# Makes `extract` importable without installing the project (uv treats this as a
+# virtual project, so there is no build step to put it on sys.path).
+pythonpath = ["."]
+asyncio_mode = "auto"

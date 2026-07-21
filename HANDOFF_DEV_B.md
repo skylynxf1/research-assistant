@@ -1,7 +1,7 @@
 # Developer B handoff — Exploration, Workspace & Accessibility
 
-**Status:** Phases 1–4 complete. Phase 5 is next.
-**Last completed branch:** `workspace/collections` — IndexedDB-backed research workspaces.
+**Status:** Phases 1–5 complete. Phase 6 is next.
+**Last completed branch:** `accessibility/reflow` — deterministic semantic reader view.
 **Working tree:** clean, `main` in sync with `origin/main`, no servers running.
 
 This document hands off the Developer B track to whoever picks it up next. It assumes you
@@ -199,6 +199,18 @@ Browser verification covered collection and note persistence across reload, pape
 while the API blob was available, the same retained paper rendered as “Unavailable locally”
 with no dead link after the API was stopped, and deletion cleanup.
 
+### Phase 5 — Semantic reflow
+
+- **`apps/web/lib/accessibility/reflow.ts`** — pure geometry-to-document transform. It
+  orders deterministic two-column zones left-before-right, groups paragraphs, uses manifest
+  sections for native heading levels, and associates only resolved mentions/citations.
+- **`PaperAnalysis.pageItems`** — retains the pdf.js text geometry already scanned for
+  mentions; there is no second extraction pipeline.
+- **`/reflow/<digest>`** — semantic headings and paragraphs with a source jump on every
+  block, real-asset links, and citation actions only for openable manifest references.
+- Ambiguous midpoint geometry fails the whole document closed to an original-PDF fallback;
+  a possibly broken partial reflow is never shown.
+
 ---
 
 ## 7. Current state
@@ -208,10 +220,11 @@ main  (updated after each green phase; see git log)
 ├── explore/shared-contracts   merged, pushed
 ├── explore/figure-atlas       merged, pushed
 ├── explore/paper-map          merged, pushed
-└── workspace/collections      complete, pushed
+├── workspace/collections      merged, pushed
+└── accessibility/reflow       complete, pushed
 ```
 
-Tests: **106 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
+Tests: **111 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
 build clean.
 No background processes; ports 8000 and 3000 are free.
 
@@ -236,6 +249,9 @@ apps/web/lib/workspace/view-model.ts     + view-model.test.ts
 apps/web/components/workspace/WorkspaceShell.tsx
 apps/web/app/workspace/page.tsx
 apps/web/app/workspace/[digest]/page.tsx
+apps/web/lib/accessibility/reflow.ts      + reflow.test.ts
+apps/web/components/accessibility/ReflowReader.tsx
+apps/web/app/reflow/[digest]/page.tsx
 ```
 
 `apps/web/package*.json` add the test-only `fake-indexeddb` dependency. `Reader.tsx` has
@@ -246,13 +262,6 @@ not been touched.
 ## 8. What is next — the remaining phase plan
 
 Follows the doc's Dev B staging (§17). One branch per phase; merge to `main` when green.
-
-### Phase 5 — `accessibility/reflow` (§10.1)
-Reflow two-column PDF text into a semantic reading layout: heading hierarchy, paragraphs,
-inline figure references that open the real assets, citation affordances. **Always preserve
-a jump back to the original PDF location.** If reading order is uncertain, offer the
-original PDF rather than silently presenting a broken order (§22). Required tests: section
-order stable, headings semantic, figure references still linked.
 
 ### Phase 6 — `explore/citation-graph` (§B3, §B4) + the cross-paper provider (§11)
 Start with the current paper plus directly openable cited papers; expand lazily as the user

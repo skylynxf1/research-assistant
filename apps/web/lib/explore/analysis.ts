@@ -19,6 +19,7 @@ import { loadManifest, pdfUrl } from "../api";
 import { findCitations, type Citation } from "../citations";
 import type { Manifest } from "../manifest";
 import { buildReverseIndex, findMentions, type Mention } from "../mentions";
+import type { PageTextItem } from "../mentions";
 import { loadPdf, pageTextItems } from "../pdf";
 import { citationBodyItems } from "./bibliography";
 
@@ -28,6 +29,8 @@ export interface PaperAnalysis {
   reverseIndex: Map<string, Mention[]>;
   mentionsByPage: Mention[][];
   citationsByPage: Citation[][];
+  /** Source text geometry retained for deterministic reflow and accessibility. */
+  pageItems: PageTextItem[][];
 }
 
 const cache = new Map<string, Promise<PaperAnalysis>>();
@@ -38,10 +41,12 @@ async function analyse(digest: string): Promise<PaperAnalysis> {
 
   const mentionsByPage: Mention[][] = [];
   const citationsByPage: Citation[][] = [];
+  const pageItems: PageTextItem[][] = [];
   let bibliographyStarted = false;
   for (let index = 0; index < pdf.numPages; index += 1) {
     const page = await pdf.getPage(index + 1);
     const items = await pageTextItems(page);
+    pageItems.push(items);
     mentionsByPage.push(findMentions(items, { page: index, assets: manifest.assets }));
     const citationBody = citationBodyItems(items, bibliographyStarted);
     bibliographyStarted = citationBody.bibliographyStarted;
@@ -52,6 +57,7 @@ async function analyse(digest: string): Promise<PaperAnalysis> {
     manifest,
     mentionsByPage,
     citationsByPage,
+    pageItems,
     reverseIndex: buildReverseIndex(mentionsByPage.flat()),
   };
 }

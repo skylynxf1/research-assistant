@@ -1,7 +1,7 @@
 # Developer B handoff — Exploration, Workspace & Accessibility
 
-**Status:** Phases 1–2 complete and merged to `main`. Phase 3 not started.
-**Last commit:** `9fa290b` — *Merge explore/figure-atlas: Figure Atlas and explore route*
+**Status:** Phases 1–3 complete and merged to `main`. Phase 4 not started.
+**Last phase merge:** `df2b67b` — *Merge explore/paper-map: deterministic paper structure*
 **Working tree:** clean, `main` in sync with `origin/main`, no servers running.
 
 This document hands off the Developer B track to whoever picks it up next. It assumes you
@@ -157,17 +157,43 @@ Behaviours pinned by tests (§19 requires the first two):
 crops, captions, pages and reverse links; section grouping puts Figure 1 under "Attention"
 and Figure 2 under "Multi-Head Attention".
 
+### Phase 3 — `explore/paper-map` → merged (`47300d5`, `09941ac`, `0cf6594`, `df2b67b`)
+
+Paper Map is the second tab at `/explore/<digest>`. It renders the paper's real section
+hierarchy with section-local assets and citations, source-page links, reverse mention
+pages, and guarded navigation for resolved cited papers.
+
+- **`apps/web/lib/explore/paper-map.ts`** — pure hierarchy and assignment model. It reuses
+  `sectionForPage`, preserves empty real sections, assigns every manifest asset exactly
+  once, and deduplicates citations within each section.
+- **`apps/web/lib/explore/bibliography.ts`** — stops citation scanning at an exact
+  `References` or `Bibliography` heading while preserving body citations before a heading
+  that begins mid-page. This prevents bibliography entries from becoming false citations.
+- **`apps/web/lib/explore/analysis.ts`** — now builds cached `citationsByPage` alongside
+  `mentionsByPage` from the same pdf.js text scan.
+- **`apps/web/components/explore/PaperMap.tsx`** — semantic, collapsible document outline
+  with keyboard-focusable native disclosure controls. Unresolved references are plain text;
+  only references with both `openable` and `arxiv_id` receive an open button.
+
+**Verified in a browser** against *Attention Is All You Need*: 22 sections and 64 source
+objects render; Figure 1 is under "Attention", Figure 2 is under "Multi-Head Attention",
+Table 1 is under "Why Self-Attention", and bibliography entries do not spill into
+"Conclusion". The full reader regression also passed: figure overlay, persistence while
+scrolling, citation split view, Escape, and dark-mode crop treatment.
+
 ---
 
 ## 7. Current state
 
 ```
-main  9fa290b  (= origin/main, clean)
+main  df2b67b  (= origin/main, clean)
 ├── explore/shared-contracts   merged, pushed
-└── explore/figure-atlas       merged, pushed
+├── explore/figure-atlas       merged, pushed
+└── explore/paper-map          merged, pushed
 ```
 
-Tests: **79 web** (vitest) + **151 Python** (pytest), all green. Typecheck clean.
+Tests: **94 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
+build clean.
 No background processes; ports 8000 and 3003 are free.
 
 Files added by Developer B so far:
@@ -177,8 +203,11 @@ apps/web/lib/evidence/source.ts          + source.test.ts
 apps/web/lib/explore/graph.ts            + graph.test.ts
 apps/web/lib/explore/atlas.ts            + atlas.test.ts
 apps/web/lib/explore/analysis.ts
+apps/web/lib/explore/paper-map.ts        + paper-map.test.ts
+apps/web/lib/explore/bibliography.ts     + bibliography.test.ts
 apps/web/components/explore/ExploreShell.tsx
 apps/web/components/explore/FigureAtlas.tsx
+apps/web/components/explore/PaperMap.tsx
 apps/web/app/explore/[digest]/page.tsx
 ```
 
@@ -189,12 +218,6 @@ Nothing else in the repo was modified. `Reader.tsx` has not been touched.
 ## 8. What is next — the remaining phase plan
 
 Follows the doc's Dev B staging (§17). One branch per phase; merge to `main` when green.
-
-### Phase 3 — `explore/paper-map` (§B2)
-Structural view of one paper: sections → nested assets → references. Fully deterministic
-from `manifest.sections`, `manifest.assets`, the client reverse index, and citations. **No
-AI required** — the doc says so explicitly. Add it as a second tab in `ExploreShell`.
-Reuse `sectionForPage` from `atlas.ts` rather than re-deriving section assignment.
 
 ### Phase 4 — `workspace/collections` (§B8, §12)
 The persistence layer. Define `WorkspaceRepository` (and later `ProgressRepository`,

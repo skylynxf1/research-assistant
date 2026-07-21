@@ -1,4 +1,5 @@
 import type { ResearchCollection, WorkspaceRepository } from "./types";
+import { normalizeCollection } from "./collections";
 
 const DATABASE_NAME = "marginalia-workspaces";
 const DATABASE_VERSION = 1;
@@ -70,7 +71,7 @@ export class IndexedDbWorkspaceRepository implements WorkspaceRepository {
     const collections = await this.request<ResearchCollection[]>("readonly", (store) =>
       store.getAll(),
     );
-    return collections.sort((a, b) => b.updatedAt - a.updatedAt);
+    return collections.map(normalizeCollection).sort((a, b) => b.updatedAt - a.updatedAt);
   }
 
   async getCollection(id: string): Promise<ResearchCollection | null> {
@@ -78,12 +79,13 @@ export class IndexedDbWorkspaceRepository implements WorkspaceRepository {
       "readonly",
       (store) => store.get(id),
     );
-    return collection ?? null;
+    return collection ? normalizeCollection(collection) : null;
   }
 
   async saveCollection(collection: ResearchCollection): Promise<ResearchCollection> {
-    await this.request<IDBValidKey>("readwrite", (store) => store.put(collection));
-    return collection;
+    const normalized = normalizeCollection(collection);
+    await this.request<IDBValidKey>("readwrite", (store) => store.put(normalized));
+    return normalized;
   }
 
   async deleteCollection(id: string): Promise<void> {

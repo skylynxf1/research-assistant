@@ -65,4 +65,21 @@ describe("IndexedDbWorkspaceRepository", () => {
 
     await expect(repo.listCollections()).rejects.toThrow("IndexedDB unavailable");
   });
+
+  it("migrates a version-1 collection without losing source references", async () => {
+    const repo = repository();
+    const legacy = {
+      ...createCollection("Legacy", { id: "legacy", now: 100 }),
+      version: 1,
+      pinnedEvidence: [{ paperId: "p", page: 1, kind: "figure" as const, assetId: "fig-1" }],
+    };
+    delete (legacy as { boardEdges?: unknown }).boardEdges;
+    await repo.saveCollection(legacy as unknown as ReturnType<typeof createCollection>);
+
+    expect(await repo.getCollection("legacy")).toMatchObject({
+      version: 2,
+      boardEdges: [],
+      pinnedEvidence: [{ paperId: "p", page: 1, kind: "figure", assetId: "fig-1" }],
+    });
+  });
 });

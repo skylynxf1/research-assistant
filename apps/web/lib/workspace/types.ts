@@ -21,8 +21,15 @@ export interface BoardNode {
   y: number;
 }
 
+export interface BoardEdge {
+  id: string;
+  sourceNodeId: string;
+  targetNodeId: string;
+  type: "user-connected";
+}
+
 export interface ResearchCollection {
-  version: 1;
+  version: 2;
   id: string;
   name: string;
   createdAt: number;
@@ -32,6 +39,7 @@ export interface ResearchCollection {
   notes: WorkspaceNote[];
   comparisons: WorkspaceComparison[];
   boardNodes: BoardNode[];
+  boardEdges: BoardEdge[];
 }
 
 export interface WorkspaceRepository {

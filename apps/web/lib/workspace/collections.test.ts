@@ -17,7 +17,7 @@ const paper = (paperId: string): PaperRef => ({
 describe("collection mutations", () => {
   it("creates a versioned empty collection", () => {
     expect(createCollection("Vision", { id: "collection-1", now: 100 })).toEqual({
-      version: 1,
+      version: 2,
       id: "collection-1",
       name: "Vision",
       createdAt: 100,
@@ -27,6 +27,7 @@ describe("collection mutations", () => {
       notes: [],
       comparisons: [],
       boardNodes: [],
+      boardEdges: [],
     });
   });
 

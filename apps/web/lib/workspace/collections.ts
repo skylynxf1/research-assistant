@@ -11,7 +11,7 @@ export function createCollection(
 ): ResearchCollection {
   const now = options.now ?? Date.now();
   return {
-    version: 1,
+    version: 2,
     id: options.id ?? newId(),
     name: name.trim(),
     createdAt: now,
@@ -21,7 +21,14 @@ export function createCollection(
     notes: [],
     comparisons: [],
     boardNodes: [],
+    boardEdges: [],
   };
+}
+
+/** Upgrade durable browser records without resetting or splitting the canonical store. */
+export function normalizeCollection(value: ResearchCollection | (Omit<ResearchCollection, "version" | "boardEdges"> & { version: 1 })): ResearchCollection {
+  if (value.version === 2) return { ...value, boardEdges: value.boardEdges ?? [] };
+  return { ...value, version: 2, boardEdges: [] };
 }
 
 export function renameCollection(

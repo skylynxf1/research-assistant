@@ -5,6 +5,72 @@ import { blobUrl } from "../lib/api";
 import type { Asset } from "../lib/manifest";
 import type { Mention } from "../lib/mentions";
 
+export type PopupMode = "idle" | "open" | "pinned" | "docked";
+
+export interface PopupState {
+  assetId: string;
+  mode: PopupMode;
+  position: { x: number; y: number } | null;
+  anchorMentionId: string | null;
+  z: number;
+}
+
+export interface PopupRect {
+  x: number;
+  y: number;
+  width: number;
+  height: number;
+}
+
+export interface PlacementInput {
+  popup: { width: number; height: number };
+  anchor: { left: number; top: number; right: number; bottom: number };
+  viewport: { width: number; height: number };
+  occupied: PopupRect[];
+}
+
+export type PopupEvent =
+  | { type: "pin" }
+  | { type: "unpin" }
+  | { type: "dock" }
+  | { type: "restore"; position: { x: number; y: number }; z: number }
+  | { type: "drag"; position: { x: number; y: number } };
+
+export function transitionPopup(popup: PopupState, event: PopupEvent): PopupState {
+  if (event.type === "pin") return { ...popup, mode: "pinned" };
+  if (event.type === "unpin") return { ...popup, mode: "open" };
+  if (event.type === "dock") return { ...popup, mode: "docked" };
+  if (event.type === "restore") return { ...popup, mode: "pinned", position: event.position, z: event.z };
+  return { ...popup, mode: "pinned", position: event.position };
+}
+
+export function placePopup(input: PlacementInput): { x: number; y: number } {
+  const { popup, anchor, viewport, occupied } = input;
+  const minY = 84;
+  const maxY = Math.max(minY, viewport.height - popup.height - 24);
+  const desiredY = Math.max(minY, Math.min(maxY, anchor.top - 70));
+  const right = viewport.width - popup.width - 36;
+  const columns: number[] = [];
+  for (let column = 0; column < 4; column += 1) {
+    columns.push(Math.max(8, right - column * (popup.width + 16)));
+    columns.push(Math.min(right, 36 + column * (popup.width + 16)));
+  }
+  const conflicts = (x: number, y: number) => occupied.some((rect) =>
+    x < rect.x + rect.width + 12 &&
+    x + popup.width + 12 > rect.x &&
+    y < rect.y + rect.height + 12 &&
+    y + popup.height + 12 > rect.y,
+  );
+  for (const x of columns) {
+    const candidates = [desiredY, ...occupied.flatMap((rect) => [rect.y + rect.height + 12, rect.y - popup.height - 12])]
+      .filter((y) => y >= minY && y <= maxY)
+      .sort((a, b) => Math.abs(a - desiredY) - Math.abs(b - desiredY));
+    const y = candidates.find((candidate) => !conflicts(x, candidate));
+    if (y !== undefined) return { x, y };
+  }
+  return { x: Math.max(8, right), y: desiredY };
+}
+
 const RAIL_GAP = 12;
 const RAIL_EDGE = 16;
 

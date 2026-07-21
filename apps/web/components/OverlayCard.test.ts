@@ -1,73 +1,56 @@
 import { describe, expect, it } from "vitest";
-import { capRailCards, cancelRailFrame, layoutRail, type CardState, type RailAnchor } from "./OverlayCard";
+import { placePopup, transitionPopup, type PopupState } from "./OverlayCard";
 
-const anchors: RailAnchor[] = [
-  { cardId: "fig-1", anchorY: 120, height: 180 },
-  { cardId: "fig-2", anchorY: 150, height: 160 },
-  { cardId: "fig-3", anchorY: 610, height: 140 },
-];
-
-describe("layoutRail", () => {
-  it("is deterministic for the same anchors", () => {
-    expect([...layoutRail(anchors, 760)]).toEqual([...layoutRail(anchors, 760)]);
+describe("placePopup", () => {
+  it("returns the same position for identical geometry", () => {
+    const input = {
+      popup: { width: 390, height: 336 },
+      anchor: { left: 700, top: 420, right: 748, bottom: 438 },
+      viewport: { width: 1512, height: 960 },
+      occupied: [],
+    };
+    expect(placePopup(input)).toEqual(placePopup(input));
   });
 
-  it("keeps cards separated by the 12px rail gap", () => {
-    const positions = layoutRail(anchors, 760);
-    const ordered = anchors
-      .map((card) => ({ ...card, y: positions.get(card.cardId)! }))
-      .sort((a, b) => a.y - b.y);
-
-    for (let index = 1; index < ordered.length; index += 1) {
-      expect(ordered[index].y).toBeGreaterThanOrEqual(
-        ordered[index - 1].y + ordered[index - 1].height + 12,
-      );
-    }
+  it("chooses a non-overlapping slot nearest the anchor", () => {
+    const position = placePopup({
+      popup: { width: 390, height: 336 },
+      anchor: { left: 700, top: 420, right: 748, bottom: 438 },
+      viewport: { width: 1512, height: 960 },
+      occupied: [{ x: 1086, y: 350, width: 390, height: 336 }],
+    });
+    expect(position).not.toEqual({ x: 1086, y: 350 });
+    expect(position.x).toBeGreaterThanOrEqual(8);
+    expect(position.y).toBeGreaterThanOrEqual(84);
   });
 
-  it("keeps a four-card stack inside both rail edges", () => {
-    const cards: RailAnchor[] = [
-      { cardId: "a", anchorY: 20, height: 130 },
-      { cardId: "b", anchorY: 80, height: 130 },
-      { cardId: "c", anchorY: 700, height: 130 },
-      { cardId: "d", anchorY: 740, height: 130 },
-    ];
-    const positions = layoutRail(cards, 620);
-
-    for (const card of cards) {
-      const y = positions.get(card.cardId)!;
-      expect(y).toBeGreaterThanOrEqual(16);
-      expect(y + card.height).toBeLessThanOrEqual(620 - 16);
-    }
+  it("clamps placement inside the viewport", () => {
+    const position = placePopup({
+      popup: { width: 390, height: 336 },
+      anchor: { left: 20, top: 900, right: 60, bottom: 918 },
+      viewport: { width: 900, height: 700 },
+      occupied: [],
+    });
+    expect(position.x).toBeGreaterThanOrEqual(8);
+    expect(position.y + 336).toBeLessThanOrEqual(700 - 24);
   });
 });
 
-describe("rail scheduler lifecycle", () => {
-  it("clears a cancelled frame so Strict Mode can schedule again", () => {
-    const frame = { current: 17 };
-    const cancelled: number[] = [];
-    cancelRailFrame(frame, (handle) => cancelled.push(handle));
-    expect(cancelled).toEqual([17]);
-    expect(frame.current).toBeNull();
-  });
-});
+describe("transitionPopup", () => {
+  const popup: PopupState = {
+    assetId: "fig-1",
+    mode: "open",
+    position: { x: 100, y: 120 },
+    anchorMentionId: "fig-1:p0:m0",
+    z: 1,
+  };
 
-describe("four-card cap", () => {
-  it("evicts the oldest soft pin before a hard pin", () => {
-    const cards: CardState[] = [
-      { assetId: "soft", anchorMentionId: null, hard: false, order: 0 },
-      ...[1, 2, 3, 4].map((order) => ({
-        assetId: `hard-${order}`,
-        anchorMentionId: null,
-        hard: true,
-        order,
-      })),
-    ];
-    expect(capRailCards(cards, 4).map((card) => card.assetId)).toEqual([
-      "hard-1",
-      "hard-2",
-      "hard-3",
-      "hard-4",
-    ]);
+  it("pins on click or drag", () => {
+    expect(transitionPopup(popup, { type: "pin" }).mode).toBe("pinned");
+    expect(transitionPopup(popup, { type: "drag", position: { x: 180, y: 160 } }).mode).toBe("pinned");
+  });
+
+  it("moves minimized popups into the dock", () => {
+    expect(transitionPopup(popup, { type: "dock" }).mode).toBe("docked");
   });
 });

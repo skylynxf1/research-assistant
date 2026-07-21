@@ -16,6 +16,7 @@ from . import EXTRACTION_VERSION
 from .crops import render_asset_crop, render_thumbnail
 from .figures import DetectedAsset, detect_assets
 from .ingest import compute_doc_id, extract_title, has_text_layer, page_geometry
+from .references import Reference, extract_references
 from .sections import detect_sections
 
 FIGURE_BACKEND = "caption-heuristic"
@@ -68,6 +69,8 @@ def build_manifest(
 
         assets, warnings = detect_assets(doc)
         sections = detect_sections(doc)
+        references, reference_warnings = extract_references(doc)
+        warnings = [*warnings, *reference_warnings]
 
         asset_entries = []
         for asset in assets:
@@ -89,8 +92,19 @@ def build_manifest(
             "page_count": doc.page_count,
             "pages": page_geometry(doc),
             "assets": asset_entries,
-            # Populated in phase 2 by extract.references.
-            "references": [],
+            "references": [
+                {
+                    "ref_id": r.ref_id,
+                    "marker": r.marker,
+                    "raw": r.raw,
+                    "title": r.title,
+                    "authors": list(r.authors),
+                    "year": r.year,
+                    "arxiv_id": r.arxiv_id,
+                    "openable": r.openable,
+                }
+                for r in references
+            ],
             "sections": [
                 {"title": s.title, "page": s.page, "level": s.level} for s in sections
             ],

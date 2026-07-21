@@ -26,10 +26,14 @@ _PUNCTUATION = {
 }
 _PUNCTUATION_RE = re.compile("|".join(map(re.escape, _PUNCTUATION)))
 
+# Typesetters break lines with any of these, not just ASCII "-". Matching only ASCII
+# leaves artifacts like "dependen- cies" in titles, because the fold to ASCII happens in
+# normalize(), which runs after this.
+_HYPHENS = "-‐‑‒–­"
 # A word split across a line break: rejoin only when the continuation is lowercase.
-_SPLIT_WORD_RE = re.compile(r"(\w)-\s*\n\s*([a-z])")
+_SPLIT_WORD_RE = re.compile(rf"(\w)[{_HYPHENS}]\s*\n\s*([a-z])")
 # "Transformer-\nBase" is a compound, not a split word: drop the break, keep the hyphen.
-_BROKEN_COMPOUND_RE = re.compile(r"(\w)-\s*\n\s*([A-Z0-9])")
+_BROKEN_COMPOUND_RE = re.compile(rf"(\w)[{_HYPHENS}]\s*\n\s*([A-Z0-9])")
 
 
 def join_hyphenated(text: str) -> str:

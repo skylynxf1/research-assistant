@@ -32,6 +32,17 @@ def test_join_hyphenated_rejoins_words_split_across_lines() -> None:
     assert join_hyphenated("as shown in Fig-\nure 3") == "as shown in Figure 3"
 
 
+def test_join_hyphenated_handles_unicode_hyphens() -> None:
+    """Typesetters use U+2010 and friends, not always ASCII "-".
+
+    Found in ResNet's bibliography, which yielded the title "Learning long-term
+    dependen- cies" because the line-break hyphen was U+2010 and the join ran before
+    punctuation folding.
+    """
+    assert join_hyphenated("long-term dependen‐\ncies") == "long-term dependencies"
+    assert join_hyphenated("convo‑\nlution") == "convolution"
+
+
 def test_join_hyphenated_keeps_genuine_hyphens() -> None:
     """A hyphen not at a line break is part of the word."""
     assert join_hyphenated("state-of-the-art results") == "state-of-the-art results"

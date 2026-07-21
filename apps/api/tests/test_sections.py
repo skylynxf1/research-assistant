@@ -52,6 +52,19 @@ def test_pages_are_zero_based(sections) -> None:
     assert all(s.page == 0 for s in sections)
 
 
+def test_a_year_prefixed_line_is_not_a_heading() -> None:
+    """ACL bibliography lines begin "2018. Title of the paper here."
+
+    Treating one as a section heading terminated BERT's reference list after a single
+    line, yielding zero references. Section numbers are one or two digits; years are four.
+    """
+    from extract.sections import looks_like_heading
+
+    assert looks_like_heading("2018. Contextual string embeddings for sequence") is False
+    assert looks_like_heading("3.5 Positional Encoding") is True
+    assert looks_like_heading("10 Conclusion") is True
+
+
 def test_prose_is_not_mistaken_for_a_heading(sections) -> None:
     """Body sentences are long and start lowercase or mid-sentence; headings are short."""
     assert not any("context loss" in s.title for s in sections)

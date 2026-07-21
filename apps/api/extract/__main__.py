@@ -42,6 +42,13 @@ def _parse_args(argv: list[str] | None) -> argparse.Namespace:
 
 
 def main(argv: list[str] | None = None) -> int:
+    # A Windows console defaults to cp1252, which cannot encode the author lists of most
+    # papers ("Łukasz Kaiser" alone breaks it). The manifest is UTF-8 by definition.
+    for stream in (sys.stdout, sys.stderr):
+        reconfigure = getattr(stream, "reconfigure", None)
+        if reconfigure is not None:
+            reconfigure(encoding="utf-8")
+
     args = _parse_args(argv)
 
     if not args.pdf.is_file():

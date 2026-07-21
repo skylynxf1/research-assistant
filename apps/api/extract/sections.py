@@ -17,8 +17,9 @@ import fitz
 from .textnorm import normalize
 
 # The title after the number must start with a letter, so a table row like
-# "1 24.5 32.1" cannot be read as a heading.
-_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?\s+([A-Za-z].*)$")
+# "1 24.5 32.1" cannot be read as a heading. Components are capped at two digits so a
+# bibliography line beginning "2018. Contextual string embeddings ..." is not one either.
+_NUMBERED_HEADING_RE = re.compile(r"^(\d{1,2}(?:\.\d{1,2})*)\.?\s+([A-Za-z].*)$")
 # Unnumbered headings that every paper has. Only accepted when set larger than body text.
 _KNOWN_HEADINGS = {
     "abstract",

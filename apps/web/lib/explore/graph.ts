@@ -23,6 +23,7 @@ export type ResearchGraphNodeType =
   | "figure"
   | "table"
   | "author"
+  | "method"
   | "dataset";
 
 export type ResearchGraphEdgeType =
@@ -31,6 +32,8 @@ export type ResearchGraphEdgeType =
   | "mentions"
   | "uses"
   | "user-connected"
+  | "coauthored"
+  | "describes-method"
   | "generated-related";
 
 export interface ResearchGraphNode {
@@ -48,6 +51,8 @@ export interface ResearchGraphEdge {
   type: ResearchGraphEdgeType;
   /** True only for inferred relationships. Renderers must not draw these as citations. */
   generated?: boolean;
+  /** Literal source for relationships such as observed coauthorship. */
+  evidence?: SourceEvidence;
 }
 
 export interface ResearchGraph {

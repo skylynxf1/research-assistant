@@ -1,7 +1,7 @@
 # Developer B handoff — Exploration, Workspace & Accessibility
 
-**Status:** Core Phases 1–9 complete. Final ownership audit found author/method networks still to land.
-**Last completed branch:** `accessibility/hardening` — typography, keyboard, semantics, and read-aloud.
+**Status:** All Developer B expansion requirements complete and verified.
+**Last completed branch:** `explore/author-method-networks` — literal network completion.
 **Working tree:** clean, `main` in sync with `origin/main`, no servers running.
 
 This document hands off the Developer B track to whoever picks it up next. It assumes you
@@ -255,6 +255,17 @@ with no dead link after the API was stopped, and deletion cleanup.
 - Pinboard cards now have four named directional buttons, so drag is never the only way to
   position evidence.
 
+### Final ownership item — Author and method networks
+
+- **`apps/web/lib/explore/author-method-network.ts`** — author nodes and exact coauthor
+  edges only from references observed in body text; no name reconciliation or inferred
+  influence. Every relation carries citation evidence.
+- Method nodes come only from explicit manifest section headings naming a method,
+  methodology, approach, architecture, or model. Nodes remain paper-local and link to the
+  heading source; generic headings are never merged across papers.
+- The collection Research route exposes these as an “Authors & Methods” tab with source
+  jumps and an explicit non-inference explanation.
+
 ---
 
 ## 7. Current state
@@ -269,10 +280,11 @@ main  (updated after each green phase; see git log)
 ├── explore/citation-graph     merged, pushed
 ├── workspace/pinboard         merged, pushed
 ├── explore/research-views     merged, pushed
-└── accessibility/hardening   complete, pushed
+├── accessibility/hardening   merged, pushed
+└── explore/author-method-networks complete, pushed
 ```
 
-Tests: **138 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
+Tests: **141 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
 build clean.
 No background processes; ports 8000 and 3000 are free.
 
@@ -313,6 +325,7 @@ apps/web/lib/explore/collection-index.ts     + collection-index.test.ts
 apps/web/components/workspace/CollectionResearch.tsx
 apps/web/app/workspace/collections/[collectionId]/research/page.tsx
 apps/web/lib/accessibility/settings.ts       + settings.test.ts
+apps/web/lib/explore/author-method-network.ts + author-method-network.test.ts
 ```
 
 `apps/web/package*.json` add the test-only `fake-indexeddb` dependency. `Reader.tsx` has
@@ -324,12 +337,7 @@ not been touched.
 
 Follows the doc's Dev B staging (§17). One branch per phase; merge to `main` when green.
 
-### Final ownership completion — author/method networks
-
-The expansion ownership list includes author/method networks but gives no dedicated detailed
-feature section. Implement the precision-first deterministic version: coauthor edges only
-from literal reference author lists, and paper→method-section edges only from explicit
-manifest section titles. Add it as a sixth collection research view on its own branch.
+No Developer B implementation phases remain.
 
 ### Deferred, needs coordination
 **Entry point from the reader into `/explore/<digest>`, and honouring the `#page=` fragment

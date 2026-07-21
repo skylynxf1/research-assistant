@@ -52,7 +52,7 @@ function CollectionCard({
           onChange={(event) => setName(event.target.value)}
           className="min-w-0 flex-1 rounded border border-neutral-300 px-3 py-2 font-medium dark:border-neutral-700 dark:bg-neutral-950"
         />
-        <button className="rounded border px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800">
+        <button type="submit" className="rounded border px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800">
           Rename
         </button>
         <button
@@ -166,7 +166,7 @@ function CollectionCard({
               title="Source page"
               className="w-20 rounded border border-neutral-300 px-2 py-2 text-sm dark:border-neutral-700 dark:bg-neutral-950"
             />
-            <button className="rounded border px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800">Add</button>
+            <button type="submit" className="rounded border px-3 py-2 text-sm hover:bg-neutral-100 dark:hover:bg-neutral-800">Add</button>
           </div>
         </form>
         <ul className="mt-3 space-y-2">
@@ -276,7 +276,7 @@ export default function WorkspaceShell({ digest }: { digest?: string }) {
             placeholder="New collection name"
             className="min-w-0 flex-1 rounded border border-neutral-300 bg-white px-3 py-2 dark:border-neutral-700 dark:bg-neutral-900"
           />
-          <button disabled={!name.trim()} className="rounded bg-sky-600 px-4 py-2 text-white disabled:opacity-40">Create</button>
+          <button type="submit" disabled={!name.trim()} className="rounded bg-sky-600 px-4 py-2 text-white disabled:opacity-40">Create</button>
         </form>
 
         {error && <p role="alert" className="mt-4 rounded bg-red-50 p-3 text-sm text-red-800 dark:bg-red-950 dark:text-red-200">{error}</p>}

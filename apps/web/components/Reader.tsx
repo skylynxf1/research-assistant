@@ -16,6 +16,7 @@ import type { ResearchContext } from "../lib/research-context/types";
 import { paperIdOf, type SourceEvidence } from "../lib/evidence/source";
 import type { CapturedSelection } from "../lib/selection/dom";
 import OverlayCard, { type CardState } from "./OverlayCard";
+import ConnectorLayer from "./ConnectorLayer";
 import PdfPageView from "./PdfPageView";
 import SelectionActionPanel from "./selection/SelectionActionPanel";
 import ReaderLearningLayer from "./learning/ReaderLearningLayer";
@@ -118,18 +119,20 @@ export default function Reader({ digest }: { digest: string }) {
     return buildResearchContext({ manifest, selection: selection.context, pages: analysis, ...(learningIndex ? { index: learningIndex } : {}) });
   }, [analysis, learningIndex, manifest, selection]);
 
-  const openCard = useCallback((assetId: string, hard: boolean) => {
+  const openCard = useCallback((assetId: string, hard: boolean, anchorMentionId?: string) => {
     setCards((previous) => {
       const existing = previous.find((card) => card.assetId === assetId);
       if (existing) {
         // Re-opening an auto-docked card promotes it to a hard pin.
         return previous.map((card) =>
-          card.assetId === assetId ? { ...card, hard: card.hard || hard } : card,
+          card.assetId === assetId
+            ? { ...card, hard: card.hard || hard, anchorMentionId: anchorMentionId ?? card.anchorMentionId }
+            : card,
         );
       }
       const kept = hard ? previous : previous.filter((card) => card.hard);
       const offset = kept.length * 28;
-      return [...kept, { assetId, x: 40 + offset, y: 110 + offset, hard }];
+      return [...kept, { assetId, x: 40 + offset, y: 110 + offset, hard, anchorMentionId }];
     });
     setFocused(assetId);
   }, []);
@@ -362,6 +365,7 @@ export default function Reader({ digest }: { digest: string }) {
 
         <div
           ref={scrollRef}
+          data-connector-reader
           className="min-w-0 flex-1 overflow-y-auto p-6"
           onScroll={() =>
             setSelection((current) =>
@@ -380,7 +384,7 @@ export default function Reader({ digest }: { digest: string }) {
               mentions={analysis[index]?.mentions ?? []}
               citations={analysis[index]?.citations ?? []}
               textItems={analysis[index]?.items ?? []}
-              onOpenAsset={(assetId) => openCard(assetId, true)}
+              onOpenAsset={(assetId, mentionId) => openCard(assetId, true, mentionId)}
               onOpenCitation={openCitation}
               onTextSelection={(captured) => {
                 setSelection({ ...captured, menuOpen: true });
@@ -438,6 +442,12 @@ export default function Reader({ digest }: { digest: string }) {
         onRestorePaperPage={scrollToPage}
       />
 
+      <ConnectorLayer
+        targets={cards
+          .filter((card) => card.hard)
+          .map((card) => ({ assetId: card.assetId, anchorMentionId: card.anchorMentionId }))}
+      />
+
       {cards.map((card, index) => {
         const asset = assetsById.get(card.assetId);
         if (!asset) return null;
@@ -451,14 +461,29 @@ export default function Reader({ digest }: { digest: string }) {
             currentPage={currentPage}
             mentions={reverseIndex.get(card.assetId) ?? []}
             onMove={(x, y) =>
-              setCards((previous) =>
-                previous.map((c) => (c.assetId === card.assetId ? { ...c, x, y, hard: true } : c)),
-              )
+              setCards((previous) => {
+                window.dispatchEvent(new Event("marginalia:connector-dirty"));
+                return previous.map((c) =>
+                  c.assetId === card.assetId ? { ...c, x, y, hard: true } : c,
+                );
+              })
             }
             onClose={() => closeCard(card.assetId)}
             onFocus={() => setFocused(card.assetId)}
             onExpand={() => setExpanded(card.assetId)}
-            onJumpToMention={(mention) => scrollToPage(mention.page)}
+            onJumpToMention={(mention) => {
+              setCards((previous) =>
+                previous.map((item) =>
+                  item.assetId === card.assetId
+                    ? {
+                        ...item,
+                        anchorMentionId: `${mention.assetId}:p${mention.page}:m${mention.index}`,
+                      }
+                    : item,
+                ),
+              );
+              scrollToPage(mention.page);
+            }}
           />
         );
       })}

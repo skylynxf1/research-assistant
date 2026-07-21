@@ -17,7 +17,7 @@ interface Props {
   mentions: Mention[];
   citations: Citation[];
   textItems: PageTextItem[];
-  onOpenAsset: (assetId: string) => void;
+  onOpenAsset: (assetId: string, mentionId: string) => void;
   onOpenCitation: (citation: Citation) => void;
   onTextSelection: (selection: CapturedSelection) => void;
   highlightedAssetId: string | null;
@@ -158,9 +158,16 @@ export default function PdfPageView({
         .map((mention, i) => (
           <button
             key={`m-${i}`}
+            data-connector-asset={mention.assetId as string}
+            data-connector-mention={`${mention.assetId}:p${pageIndex}:m${mention.index}`}
             type="button"
             title={`Open ${mention.text}`}
-            onClick={() => onOpenAsset(mention.assetId as string)}
+            onClick={() =>
+              onOpenAsset(
+                mention.assetId as string,
+                `${mention.assetId}:p${pageIndex}:m${mention.index}`,
+              )
+            }
             className={`absolute z-30 cursor-pointer border-b-2 transition-colors ${
               highlightedAssetId === mention.assetId
                 ? "border-amber-500 bg-amber-300/25"

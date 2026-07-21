@@ -7,6 +7,8 @@ import type { Mention } from "../lib/mentions";
 
 export interface CardState {
   assetId: string;
+  /** Exact mention instance that most recently pinned or navigated this card. */
+  anchorMentionId?: string;
   x: number;
   y: number;
   /** Soft pins are replaced by the next auto-dock; hard pins persist until dismissed. */
@@ -78,6 +80,7 @@ export default function OverlayCard({
 
   return (
     <div
+      data-connector-card={asset.asset_id}
       className={`fixed z-40 w-80 rounded-lg border shadow-2xl backdrop-blur-md transition-shadow ${
         focused
           ? "border-sky-400 bg-white/95 dark:bg-neutral-900/95"

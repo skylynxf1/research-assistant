@@ -5,13 +5,20 @@
  * imports the other's components; they exchange these. Keep this module small: §3 warns
  * that a "shared utilities" layer becomes a dumping ground.
  *
- * Coordinates are normalized top-left schema coordinates and are passed through unchanged.
- * Evidence is a pointer to source material, never detached generated content.
+ * Two invariants this module exists to protect:
+ *
+ * 1. **One coordinate model.** `NormalizedBBox` is an alias of the generated schema's
+ *    `BBox`, not a new type. Coordinates are converted exactly once, in
+ *    `apps/api/extract/geometry.py` (§1.2); everything here passes them through
+ *    untouched. Never re-derive or "helpfully" flip a box.
+ * 2. **Evidence is a pointer, never a copy.** Every generated or organised artifact must
+ *    be able to send the reader back to the page it came from, which is what makes
+ *    "Show evidence →" possible (§6).
  */
 
 import type { Asset, BBox, Manifest, Reference, Section } from "../manifest";
 
-/** Normalized [x0, y0, x1, y1], top-left origin. */
+/** Normalized [x0, y0, x1, y1], top-left origin. Same type the manifest already uses. */
 export type NormalizedBBox = BBox;
 
 export interface PaperRef {
@@ -67,7 +74,13 @@ export interface PassageRef {
 }
 
 /**
- * §5.2's union, plus "algorithm" because the manifest represents algorithms directly.
+ * §5.2's union, plus `"algorithm"`.
+ *
+ * The extraction manifest produces algorithm assets, and the doc's six kinds have no way
+ * to say so. Labelling an algorithm a "figure" would put a wrong label on primary source
+ * material, which this product exists not to do. The addition is additive — nothing that
+ * only emits the original six breaks — and TypeScript will flag any exhaustive switch
+ * that needs updating rather than failing silently. Flagged for coordination.
  */
 export type SourceEvidenceKind =
   | "passage"
@@ -78,24 +91,16 @@ export type SourceEvidenceKind =
   | "caption"
   | "citation";
 
-/**
- * Canonical pointer to primary-source material.
- *
- * `passageId` and `citationRefId` are additive resource handles needed for fail-closed
- * scored interactions. They are optional for non-scored reader affordances so existing
- * consumers remain compatible, but a resolver will reject a scored passage/citation
- * relationship when its corresponding handle is absent.
- */
 export interface SourceEvidence {
   paperId: string;
   page: number;
   kind: SourceEvidenceKind;
+
   text?: string;
   assetId?: string;
   bbox?: NormalizedBBox;
+
   sectionId?: string;
-  passageId?: string;
-  citationRefId?: string;
 }
 
 /** The digest, which is how every blob path and cache entry is keyed (spec D1). */
@@ -112,7 +117,11 @@ export function paperRefOf(manifest: Manifest): PaperRef {
 }
 
 /**
- * Section ids are derived from manifest order because headings need not be unique.
+ * Section ids are derived from manifest order.
+ *
+ * The manifest deliberately does not carry section ids, and titles are not unique (plenty
+ * of papers have two "Results" headings), so position is the only stable handle. Same
+ * manifest in, same id out.
  */
 export function sectionIdFor(index: number): string {
   return `sec-${index}`;
@@ -170,7 +179,6 @@ export function citationEvidence(
     paperId,
     page,
     kind: "citation",
-    citationRefId: reference.ref_id,
     text: reference.title ?? reference.raw,
   };
 }
@@ -179,19 +187,16 @@ export function passageEvidence(
   paperId: string,
   page: number,
   text: string,
-  extra: {
-    bbox?: NormalizedBBox;
-    sectionId?: string;
-    passageId?: string;
-  } = {},
+  extra: { bbox?: NormalizedBBox; sectionId?: string } = {},
 ): SourceEvidence {
   return { paperId, page, kind: "passage", text, ...extra };
 }
 
 /**
- * Stable identity for an evidence pointer. Resource handles are preferred, while bbox and
- * text make non-scored, legacy reader evidence distinguishable without inventing a second
- * identity model.
+ * A stable identity for a piece of evidence, for deduplication and persistence.
+ *
+ * Includes the paper id because asset ids are only unique within a paper — every paper
+ * ever written has a `fig-1`.
  */
 export function evidenceKey(evidence: SourceEvidence): string {
   return [
@@ -199,10 +204,7 @@ export function evidenceKey(evidence: SourceEvidence): string {
     evidence.kind,
     evidence.page,
     evidence.assetId ?? "",
-    evidence.passageId ?? "",
-    evidence.citationRefId ?? "",
     evidence.bbox?.join(",") ?? "",
-    evidence.text ?? "",
   ].join("|");
 }
 

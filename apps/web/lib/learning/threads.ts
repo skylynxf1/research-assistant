@@ -139,7 +139,6 @@ export function buildConceptThread({
             page: pageIndex,
             kind: "passage",
             text: passage.text,
-            passageId: passage.id,
             ...(bbox ? { bbox } : {}),
             ...(section ? { sectionId: section.sectionId } : {}),
           },

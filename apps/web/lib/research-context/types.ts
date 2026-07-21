@@ -1,10 +1,17 @@
-export type NormalizedBBox = [number, number, number, number];
+import type {
+  AssetRef as SharedAssetRef,
+  ConceptRef as SharedConceptRef,
+  NormalizedBBox,
+  PaperRef as SharedPaperRef,
+  PassageRef as SharedPassageRef,
+  SectionRef as SharedSectionRef,
+} from "../evidence/source";
 
-export interface PaperRef {
-  id: string;
-  title: string;
+export type { NormalizedBBox } from "../evidence/source";
+
+/** Learning-local metadata extends the shared paper identity; it does not replace it. */
+export interface PaperRef extends SharedPaperRef {
   sourceType: "upload" | "arxiv";
-  arxivId?: string;
 }
 
 export interface TextItemRange {
@@ -20,29 +27,15 @@ export interface SelectionContext {
   bbox?: NormalizedBBox;
 }
 
-export interface SectionRef {
-  id: string;
-  title: string;
-  page: number;
-  level: number;
-}
+export interface SectionRef extends SharedSectionRef {}
 
-export interface PassageRef {
+export interface PassageRef extends SharedPassageRef {
   id: string;
-  paperId: string;
-  page: number;
-  text: string;
   itemRanges: TextItemRange[];
-  bbox?: NormalizedBBox;
-  sectionId?: string;
 }
 
-export interface AssetRef {
-  id: string;
-  paperId: string;
-  kind: "figure" | "table" | "algorithm" | "equation";
-  label: string;
-  page: number;
+/** Learning needs geometry/caption context in addition to the shared asset pointer. */
+export interface AssetRef extends SharedAssetRef {
   bbox: NormalizedBBox;
   caption: string;
 }
@@ -64,10 +57,8 @@ export interface MentionRef {
   bbox?: NormalizedBBox;
 }
 
-export interface ConceptRef {
-  id: string;
+export interface ConceptRef extends SharedConceptRef {
   paperId: string;
-  label: string;
 }
 
 export interface SourceWindow {
@@ -88,12 +79,4 @@ export interface ResearchContext {
   sourceWindow: SourceWindow;
 }
 
-export interface SourceEvidence {
-  paperId: string;
-  page: number;
-  kind: "passage" | "figure" | "table" | "equation" | "caption" | "citation";
-  text?: string;
-  assetId?: string;
-  bbox?: NormalizedBBox;
-  sectionId?: string;
-}
+export type SourceEvidence = import("../evidence/source").SourceEvidence;

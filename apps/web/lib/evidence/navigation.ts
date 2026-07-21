@@ -1,4 +1,4 @@
-import type { NormalizedBBox, SourceEvidence } from "../research-context/types";
+import type { NormalizedBBox, SourceEvidence } from "./source";
 
 export interface EvidenceTarget {
   paperId: string;

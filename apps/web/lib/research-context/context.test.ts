@@ -65,13 +65,13 @@ describe("buildResearchContext", () => {
   });
 
   it("resolves the paper and containing section", () => {
-    expect(context.paper.id).toBe(manifest.doc_id);
+    expect(context.paper.paperId).toBe(manifest.doc_id.replace("sha256:", ""));
     expect(context.selection?.page).toBe(1);
     expect(context.section?.title).toBe("Model Architecture");
   });
 
   it("finds nearby manifest assets without creating a second coordinate model", () => {
-    expect(context.nearbyAssets.map((asset) => asset.id)).toEqual(["fig-1"]);
+    expect(context.nearbyAssets.map((asset) => asset.assetId)).toEqual(["fig-1"]);
     expect(context.nearbyAssets[0].bbox).toEqual(manifest.assets[0].bbox);
   });
 

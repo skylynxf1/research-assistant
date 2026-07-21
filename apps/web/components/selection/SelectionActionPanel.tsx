@@ -2,7 +2,8 @@
 
 import { Image, LocateFixed, X } from "lucide-react";
 import type { ConceptThread } from "../../lib/learning/types";
-import type { ResearchContext, SourceEvidence } from "../../lib/research-context/types";
+import type { ResearchContext } from "../../lib/research-context/types";
+import type { SourceEvidence } from "../../lib/evidence/source";
 
 interface Props {
   mode: "context" | "thread";
@@ -65,7 +66,7 @@ export default function SelectionActionPanel({
                 className={evidenceButtonClass}
                 onClick={() =>
                   onNavigateEvidence({
-                    paperId: context.paper.id,
+                    paperId: context.paper.paperId,
                     page: context.sourceWindow.selected!.page,
                     kind: "passage",
                     text: context.sourceWindow.selected!.text,
@@ -88,10 +89,10 @@ export default function SelectionActionPanel({
               <section aria-label="Nearby assets">
                 {context.nearbyAssets.map((asset) => (
                   <button
-                    key={asset.id}
+                    key={asset.assetId}
                     type="button"
                     className={evidenceButtonClass}
-                    onClick={() => onOpenAsset(asset.id)}
+                    onClick={() => onOpenAsset(asset.assetId)}
                   >
                     <Image aria-hidden="true" className="mt-0.5 shrink-0" size={15} />
                     <span>
@@ -108,7 +109,7 @@ export default function SelectionActionPanel({
         {mode === "thread" && thread && (
           <div>
             {thread.groups.map((group, groupIndex) => (
-              <section key={group.section?.id ?? `group-${groupIndex}`}>
+              <section key={group.section?.sectionId ?? `group-${groupIndex}`}>
                 <h2 className="sticky top-0 border-b border-neutral-200 bg-neutral-50 px-4 py-2 text-xs font-semibold text-neutral-600 dark:border-neutral-800 dark:bg-neutral-900 dark:text-neutral-300">
                   {group.section?.title ?? "Unsectioned"}
                 </h2>

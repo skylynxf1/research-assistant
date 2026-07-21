@@ -67,7 +67,7 @@ function isWordCharacter(char: string | undefined): boolean {
 
 function assetRef(paperId: string, asset: Asset): AssetRef {
   return {
-    id: asset.asset_id,
+    assetId: asset.asset_id,
     paperId,
     kind: asset.kind,
     label: asset.label,
@@ -139,8 +139,9 @@ export function buildConceptThread({
             page: pageIndex,
             kind: "passage",
             text: passage.text,
+            passageId: passage.id,
             ...(bbox ? { bbox } : {}),
-            ...(section ? { sectionId: section.id } : {}),
+            ...(section ? { sectionId: section.sectionId } : {}),
           },
           nearbyAssets,
         });
@@ -151,8 +152,8 @@ export function buildConceptThread({
   const groups: ConceptThreadGroup[] = [];
   for (const occurrence of occurrences) {
     const section = sectionAtPage(sections, occurrence.page);
-    const key = section?.id ?? "unsectioned";
-    const existing = groups.find((group) => (group.section?.id ?? "unsectioned") === key);
+    const key = section?.sectionId ?? "unsectioned";
+    const existing = groups.find((group) => (group.section?.sectionId ?? "unsectioned") === key);
     if (existing) existing.occurrences.push(occurrence);
     else groups.push({ ...(section ? { section } : {}), occurrences: [occurrence] });
   }
@@ -161,7 +162,7 @@ export function buildConceptThread({
   return {
     id: `${paperId}:thread-${id}`,
     paperId,
-    concept: { id, paperId, label: concept.trim() },
+    concept: { conceptId: id, paperId, label: concept.trim() },
     occurrences,
     groups,
   };

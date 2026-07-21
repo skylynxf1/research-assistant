@@ -10,7 +10,8 @@ import { buildReverseIndex, findMentions, type Mention, type PageTextItem } from
 import type { Manifest } from "../lib/manifest";
 import { loadPdf, pageTextItems, type PDFDocumentProxy } from "../lib/pdf";
 import { buildResearchContext } from "../lib/research-context/context";
-import type { ResearchContext, SourceEvidence } from "../lib/research-context/types";
+import type { ResearchContext } from "../lib/research-context/types";
+import { paperIdOf, type SourceEvidence } from "../lib/evidence/source";
 import type { CapturedSelection } from "../lib/selection/dom";
 import OverlayCard, { type CardState } from "./OverlayCard";
 import PdfPageView from "./PdfPageView";
@@ -134,8 +135,8 @@ export default function Reader({ digest }: { digest: string }) {
   const navigateToEvidence = useCallback(
     (evidence: SourceEvidence) => {
       if (!manifest) return;
-      const target = evidenceTarget(evidence, { [manifest.doc_id]: manifest.page_count });
-      if (!target || target.paperId !== manifest.doc_id) return;
+      const target = evidenceTarget(evidence, { [paperIdOf(manifest)]: manifest.page_count });
+      if (!target || target.paperId !== paperIdOf(manifest)) return;
       setActiveEvidence(evidence);
       scrollToPage(target.page);
       if (target.assetId && assetsById.has(target.assetId)) openCard(target.assetId, true);

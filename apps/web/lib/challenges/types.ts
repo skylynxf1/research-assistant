@@ -1,4 +1,4 @@
-import type { SourceEvidence } from "../research-context/types";
+import type { SourceEvidence } from "../evidence/source";
 
 export type ChallengeType =
   | "multiple-choice"

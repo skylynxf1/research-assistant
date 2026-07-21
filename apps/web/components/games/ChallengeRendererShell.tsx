@@ -8,7 +8,7 @@ import type {
   ChallengeChoice,
   ChallengeSpec,
 } from "../../lib/challenges/types";
-import type { SourceEvidence } from "../../lib/research-context/types";
+import type { SourceEvidence } from "../../lib/evidence/source";
 
 interface Props {
   challenge: ChallengeSpec;

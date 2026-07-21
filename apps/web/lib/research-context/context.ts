@@ -1,5 +1,6 @@
 import type { Citation } from "../citations";
 import type { Manifest, Section } from "../manifest";
+import { paperIdOf, paperRefOf, sectionIdFor } from "../evidence/source";
 import type { Mention, PageTextItem } from "../mentions";
 import type {
   AssetRef,
@@ -41,7 +42,7 @@ function unionBBoxes(boxes: NormalizedBBox[]): NormalizedBBox | undefined {
 }
 
 function sectionId(index: number): string {
-  return `section-${index}`;
+  return sectionIdFor(index);
 }
 
 export function sectionAtPage(sections: Section[], page: number): SectionRef | undefined {
@@ -51,7 +52,7 @@ export function sectionAtPage(sections: Section[], page: number): SectionRef | u
     else break;
   }
   if (matchIndex < 0) return undefined;
-  return { id: sectionId(matchIndex), ...sections[matchIndex] };
+  return { sectionId: sectionId(matchIndex), ...sections[matchIndex] };
 }
 
 interface IndexedItem {
@@ -135,7 +136,7 @@ export function buildPagePassages(
       text: joinLines(group),
       itemRanges,
       ...(bbox ? { bbox } : {}),
-      ...(section ? { sectionId: section.id } : {}),
+      ...(section ? { sectionId: section.sectionId } : {}),
     };
   });
 }
@@ -163,7 +164,7 @@ function conceptFromSelection(paperId: string, text: string): ConceptRef[] {
   const label = text.replace(/\s+/g, " ").trim();
   if (label.length < 2 || label.length > 120) return [];
   const slug = label.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
-  return [{ id: `concept-${slug || "selection"}`, paperId, label }];
+  return [{ conceptId: `concept-${slug || "selection"}`, paperId, label }];
 }
 
 export function buildResearchContext({
@@ -171,8 +172,9 @@ export function buildResearchContext({
   selection,
   pages,
 }: BuildContextInput): ResearchContext {
+  const paperId = paperIdOf(manifest);
   const allPassages = pages.flatMap((page, index) =>
-    buildPagePassages(manifest.doc_id, index, page.items, manifest.sections),
+    buildPagePassages(paperId, index, page.items, manifest.sections),
   );
   const selectedIndex = allPassages.findIndex((passage) => overlapsSelection(passage, selection));
   const selected = selectedIndex >= 0 ? allPassages[selectedIndex] : undefined;
@@ -191,8 +193,8 @@ export function buildResearchContext({
     .sort((a, b) => centerDistance(a.bbox, selection.bbox ?? a.bbox) - centerDistance(b.bbox, selection.bbox ?? b.bbox))
     .slice(0, 3)
     .map((asset) => ({
-      id: asset.asset_id,
-      paperId: manifest.doc_id,
+      assetId: asset.asset_id,
+      paperId,
       kind: asset.kind,
       label: asset.label,
       page: asset.page,
@@ -224,15 +226,13 @@ export function buildResearchContext({
   const sourceWindow = { before, ...(selected ? { selected } : {}), after };
   return {
     paper: {
-      id: manifest.doc_id,
-      title: manifest.title,
+      ...paperRefOf(manifest),
       sourceType: manifest.source.type,
-      ...(manifest.source.arxiv_id ? { arxivId: manifest.source.arxiv_id } : {}),
     },
     selection,
     section: sectionAtPage(manifest.sections, selection.page),
     surroundingPassages: [...before, ...(selected ? [selected] : []), ...after],
-    concepts: conceptFromSelection(manifest.doc_id, selection.text),
+    concepts: conceptFromSelection(paperId, selection.text),
     nearbyAssets,
     citations,
     mentions,

@@ -116,6 +116,12 @@ export default function WorkspacePinboard({ collectionId }: { collectionId: stri
                 <p className="font-medium">{node.note || "Evidence card"}</p>
                 {node.source ? <p className="mt-2 text-xs opacity-65">{evidenceLabel(node.source, manifest)}</p> : null}
                 {node.source && manifest ? <a href={`/read/${node.source.paperId}#page=${node.source.page}`} className="mt-2 block text-xs text-sky-700 hover:underline dark:text-sky-300">Show source →</a> : node.source ? <p className="mt-2 text-xs text-amber-700 dark:text-amber-300">Source unavailable locally</p> : null}
+                <div className="mt-3 grid grid-cols-4 gap-1" role="group" aria-label={`Move ${node.note || "evidence card"}`}>
+                  <button type="button" aria-label="Move card left" onClick={() => void save(moveBoardNode(collection, node.id, { x: node.x - 24, y: node.y }))} className="rounded border px-1 py-1">←</button>
+                  <button type="button" aria-label="Move card up" onClick={() => void save(moveBoardNode(collection, node.id, { x: node.x, y: node.y - 24 }))} className="rounded border px-1 py-1">↑</button>
+                  <button type="button" aria-label="Move card down" onClick={() => void save(moveBoardNode(collection, node.id, { x: node.x, y: node.y + 24 }))} className="rounded border px-1 py-1">↓</button>
+                  <button type="button" aria-label="Move card right" onClick={() => void save(moveBoardNode(collection, node.id, { x: node.x + 24, y: node.y }))} className="rounded border px-1 py-1">→</button>
+                </div>
                 <button type="button" onClick={() => void save(removeBoardNode(collection, node.id))} className="mt-3 text-xs text-red-700 hover:underline dark:text-red-300">Remove card</button>
               </article>
             );

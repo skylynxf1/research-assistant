@@ -30,6 +30,19 @@ Known limitations: no browser surface is available in this CLI environment, so a
 
 ---
 
+### FROZEN MAIN INTEGRATION
+
+Dev A Phase 2 completion SHA: `69bf2ff36a3dc2ca1001aa4cf8032f1414393bc6`
+Frozen main SHA: `4c9a9fb930bc8c625333566e402b1222c2b1fbcd`
+Main work included: Dev B citation graph and cross-paper provider, pinboard/workspace, collection research views, reflow/accessibility controls, and literal author/method networks.
+Integration commit SHA: `4bf44860ec8e5371f79a56547b81a06786b3f2f2`
+Conflicts: none.
+Resolution: automatic merge preserved both Dev A learning files and Dev B exploration/accessibility files.
+Tests after merge: 167 web tests passed; 151 Python tests passed; TypeScript typecheck and production web build passed.
+Known coordination points: Dev A must consume `CrossPaperContextProvider` through `lib/explore/cross-paper-provider.ts` without importing Dev B UI, and should use the existing workspace persistence boundary rather than create a competing store.
+
+---
+
 ## What this is, in one paragraph
 
 A PDF reader for arXiv AI/ML papers. A sentence on page 3 says "as shown in Figure 1";

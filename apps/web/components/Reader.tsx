@@ -19,6 +19,7 @@ import type { CapturedSelection } from "../lib/selection/dom";
 import OverlayCard, {
   isMentionActive,
   placePopup,
+  shouldCloseCompactOutline,
   shouldOpenPopup,
   transitionPopup,
   type PopupEvent,
@@ -237,7 +238,7 @@ export default function Reader({ digest }: { digest: string }) {
   }, []);
 
   const closeCompactOutline = useCallback(() => {
-    if (window.innerWidth < 1100) setOutlineOpen(false);
+    if (shouldCloseCompactOutline(window.innerWidth)) setOutlineOpen(false);
   }, []);
 
   const restorePopup = useCallback(

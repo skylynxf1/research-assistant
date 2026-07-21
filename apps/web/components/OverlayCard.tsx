@@ -39,6 +39,10 @@ export function isMentionActive(
   return top > viewportHeight * 0.1 && top < viewportHeight * 0.82;
 }
 
+export function shouldCloseCompactOutline(viewportWidth: number): boolean {
+  return viewportWidth < 1100;
+}
+
 export function shouldOpenPopup(
   existing: PopupState | undefined,
   pin: boolean,

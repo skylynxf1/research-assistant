@@ -5,6 +5,7 @@ import OverlayCard, {
   clampPopupPosition,
   isMentionActive,
   placePopup,
+  shouldCloseCompactOutline,
   shouldOpenPopup,
   transitionPopup,
   type PopupState,
@@ -44,6 +45,13 @@ describe("isMentionActive", () => {
     expect(isMentionActive({ top: 250 }, 1000, 200)).toBe(false);
     expect(isMentionActive({ top: 400 }, 1000, 200)).toBe(true);
     expect(isMentionActive({ top: 1050 }, 1000, 200)).toBe(false);
+  });
+});
+
+describe("shouldCloseCompactOutline", () => {
+  it("closes below 1100px but stays open at the breakpoint", () => {
+    expect(shouldCloseCompactOutline(1099)).toBe(true);
+    expect(shouldCloseCompactOutline(1100)).toBe(false);
   });
 });
 

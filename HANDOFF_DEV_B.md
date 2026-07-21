@@ -1,7 +1,7 @@
 # Developer B handoff — Exploration, Workspace & Accessibility
 
-**Status:** Phases 1–5 complete. Phase 6 is next.
-**Last completed branch:** `accessibility/reflow` — deterministic semantic reader view.
+**Status:** Phases 1–6 complete. Phase 7 is next.
+**Last completed branch:** `explore/citation-graph` — lazy literal citation network and provider.
 **Working tree:** clean, `main` in sync with `origin/main`, no servers running.
 
 This document hands off the Developer B track to whoever picks it up next. It assumes you
@@ -211,6 +211,17 @@ with no dead link after the API was stopped, and deletion cleanup.
 - Ambiguous midpoint geometry fails the whole document closed to an original-PDF fallback;
   a possibly broken partial reflow is never shown.
 
+### Phase 6 — Citation graph and cross-paper provider
+
+- **`apps/web/lib/explore/citation-graph.ts`** — builds on the shared `ResearchGraph` and
+  creates only literal `cites` edges for body-observed references with both `openable` and
+  `arxiv_id`. Citation trails retain literal sentence text and source pages.
+- **`apps/web/components/explore/CitationGraph.tsx`** — fixed-size paper nodes, solid
+  citation edges, source-linked trails, and explicit one-hop expansion. No background crawl.
+- **`apps/web/lib/explore/cross-paper-provider.ts`** — the UI-independent section 11
+  contract: paper lookup, loaded literal neighbours, collection papers, and bounded lexical
+  evidence lookup over source references.
+
 ---
 
 ## 7. Current state
@@ -221,10 +232,11 @@ main  (updated after each green phase; see git log)
 ├── explore/figure-atlas       merged, pushed
 ├── explore/paper-map          merged, pushed
 ├── workspace/collections      merged, pushed
-└── accessibility/reflow       complete, pushed
+├── accessibility/reflow       merged, pushed
+└── explore/citation-graph     complete, pushed
 ```
 
-Tests: **111 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
+Tests: **119 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
 build clean.
 No background processes; ports 8000 and 3000 are free.
 
@@ -252,6 +264,9 @@ apps/web/app/workspace/[digest]/page.tsx
 apps/web/lib/accessibility/reflow.ts      + reflow.test.ts
 apps/web/components/accessibility/ReflowReader.tsx
 apps/web/app/reflow/[digest]/page.tsx
+apps/web/lib/explore/citation-graph.ts       + citation-graph.test.ts
+apps/web/lib/explore/cross-paper-provider.ts + cross-paper-provider.test.ts
+apps/web/components/explore/CitationGraph.tsx
 ```
 
 `apps/web/package*.json` add the test-only `fake-indexeddb` dependency. `Reader.tsx` has
@@ -262,22 +277,6 @@ not been touched.
 ## 8. What is next — the remaining phase plan
 
 Follows the doc's Dev B staging (§17). One branch per phase; merge to `main` when green.
-
-### Phase 6 — `explore/citation-graph` (§B3, §B4) + the cross-paper provider (§11)
-Start with the current paper plus directly openable cited papers; expand lazily as the user
-explores. **Do not load an enormous academic graph by default** (§21). A citation edge may
-only be created from an actually resolved reference (§19). Then expose:
-
-```ts
-interface CrossPaperContextProvider {
-  getPaper(paperId: string): PaperRef | null;
-  getConnectedPapers(paperId: string): PaperRef[];
-  getCollectionPapers(collectionId: string): PaperRef[];
-  findEvidence(query: EvidenceQuery): SourceEvidence[];
-}
-```
-
-This is what unblocks Developer A's cross-paper games, so land it before Stage 4.
 
 ### Phase 7 — `workspace/pinboard` (§B9) + comparison (§B10)
 Canvas for organizing figures, tables, passages, citations. Connections are user-created

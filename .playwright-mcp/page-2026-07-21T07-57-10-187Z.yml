@@ -1,0 +1,128 @@
+- generic [ref=f1e1]:
+  - button "Open Next.js Dev Tools" [ref=f1e8] [cursor=pointer]
+  - alert [ref=f1e12]
+  - generic [ref=f1e13]:
+    - banner [ref=f1e14]:
+      - button "☰" [ref=f1e15]
+      - heading "Attention Is All You Need" [level=1] [ref=f1e16]
+      - generic [ref=f1e17]: p.3 / 15
+      - generic [ref=f1e18]:
+        - checkbox "auto-dock" [checked] [ref=f1e19]
+        - text: auto-dock
+      - button "☾" [ref=f1e20]
+    - generic [ref=f1e21]:
+      - navigation [ref=f1e22]:
+        - button "Introduction" [ref=f1e23]
+        - button "Background" [ref=f1e24]
+        - button "Model Architecture" [ref=f1e25]
+        - button "Encoder and Decoder Stacks" [ref=f1e26]
+        - button "Attention" [ref=f1e27]
+        - button "Scaled Dot-Product Attention" [ref=f1e28]
+        - button "Multi-Head Attention" [ref=f1e29]
+        - button "Applications of Attention in our Model" [ref=f1e30]
+        - button "Position-wise Feed-Forward Networks" [ref=f1e31]
+        - button "Embeddings and Softmax" [ref=f1e32]
+        - button "Positional Encoding" [ref=f1e33]
+        - button "Why Self-Attention" [ref=f1e34]
+        - button "Training" [ref=f1e35]
+        - button "Training Data and Batching" [ref=f1e36]
+        - button "Hardware and Schedule" [ref=f1e37]
+        - button "Optimizer" [ref=f1e38]
+        - button "Regularization" [ref=f1e39]
+        - button "Results" [ref=f1e40]
+        - button "Machine Translation" [ref=f1e41]
+        - button "Model Variations" [ref=f1e42]
+        - button "English Constituency Parsing" [ref=f1e43]
+        - button "Conclusion" [ref=f1e44]
+        - separator [ref=f1e45]
+        - paragraph [ref=f1e46]: Figures
+        - button "Figure 1" [ref=f1e47]
+        - button "Figure 2" [ref=f1e48]
+        - button "Table 1" [ref=f1e49]
+        - button "Table 2" [ref=f1e50]
+        - button "Table 3" [ref=f1e51]
+        - button "Table 4" [ref=f1e52]
+        - button "Figure 3" [ref=f1e53]
+        - button "Figure 4" [ref=f1e54]
+        - button "Figure 5" [ref=f1e55]
+      - generic [ref=f1e56]:
+        - generic [ref=f1e59]:
+          - button "Open [38, 24, 15] side by side" [ref=f1e61] [cursor=pointer]
+          - button "Open [21] side by side" [ref=f1e62] [cursor=pointer]
+          - button "Open [32] side by side" [ref=f1e63] [cursor=pointer]
+          - button "Open [18] side by side" [ref=f1e64] [cursor=pointer]
+          - button "Open [9] side by side" [ref=f1e65] [cursor=pointer]
+          - button "Open [4, 27, 28, 22] side by side" [ref=f1e66] [cursor=pointer]
+          - button "Open [17, 18] side by side" [ref=f1e67] [cursor=pointer]
+          - button "Open [9] side by side" [ref=f1e68] [cursor=pointer]
+          - button "Open [10] side by side" [ref=f1e69] [cursor=pointer]
+        - generic [ref=f1e70]:
+          - button "Open Figure 1" [active] [ref=f1e72] [cursor=pointer]
+          - button "Open [1] side by side" [ref=f1e73] [cursor=pointer]
+        - button "Open Figure 2" [ref=f1e76] [cursor=pointer]
+        - generic [ref=f1e77]:
+          - button "Open Figure 2" [ref=f1e79] [cursor=pointer]
+          - button "Open Figure 2" [ref=f1e80] [cursor=pointer]
+          - button "Open [38, 2, 9] side by side" [ref=f1e81] [cursor=pointer]
+          - button "Open [30] side by side" [ref=f1e82] [cursor=pointer]
+        - generic [ref=f1e83]:
+          - button "Open Table 3" [ref=f1e85] [cursor=pointer]
+          - button "Open Table 1" [ref=f1e86] [cursor=pointer]
+          - button "Open [9] side by side" [ref=f1e87] [cursor=pointer]
+          - button "Open [9] side by side" [ref=f1e88] [cursor=pointer]
+        - generic [ref=f1e89]:
+          - button "Open table 3" [ref=f1e91] [cursor=pointer]
+          - button "Open [38] side by side" [ref=f1e92] [cursor=pointer]
+          - button "Open [31] side by side" [ref=f1e93] [cursor=pointer]
+          - button "Open [18] side by side" [ref=f1e94] [cursor=pointer]
+          - button "Open [6] side by side" [ref=f1e95] [cursor=pointer]
+          - button "Open [38] side by side" [ref=f1e96] [cursor=pointer]
+        - generic [ref=f1e97]:
+          - button "Open Table 2" [ref=f1e99] [cursor=pointer]
+          - button "Open Table 3" [ref=f1e100] [cursor=pointer]
+          - button "Open Table 2" [ref=f1e101] [cursor=pointer]
+          - button "Open [18] side by side" [ref=f1e102] [cursor=pointer]
+          - button "Open [38] side by side" [ref=f1e103] [cursor=pointer]
+          - button "Open [9] side by side" [ref=f1e104] [cursor=pointer]
+          - button "Open [32] side by side" [ref=f1e105] [cursor=pointer]
+          - button "Open [38] side by side" [ref=f1e106] [cursor=pointer]
+          - button "Open [9] side by side" [ref=f1e107] [cursor=pointer]
+          - button "Open [38] side by side" [ref=f1e108] [cursor=pointer]
+          - button "Open [38] side by side" [ref=f1e109] [cursor=pointer]
+        - generic [ref=f1e110]:
+          - button "Open Table 3" [ref=f1e112] [cursor=pointer]
+          - button "Open Table 3" [ref=f1e113] [cursor=pointer]
+          - button "Open Table 3" [ref=f1e114] [cursor=pointer]
+          - button "Open [9] side by side" [ref=f1e115] [cursor=pointer]
+        - generic [ref=f1e116]:
+          - button "Open Table 4" [ref=f1e118] [cursor=pointer]
+          - button "Open [23] side by side" [ref=f1e119] [cursor=pointer]
+          - button "Open [1] side by side" [ref=f1e120] [cursor=pointer]
+          - button "Open [4] side by side" [ref=f1e121] [cursor=pointer]
+        - generic [ref=f1e122]:
+          - button "Open [6] side by side" [ref=f1e124] [cursor=pointer]
+          - button "Open [9] side by side" [ref=f1e125] [cursor=pointer]
+          - button "Open [10] side by side" [ref=f1e126] [cursor=pointer]
+          - button "Open [15] side by side" [ref=f1e127] [cursor=pointer]
+          - button "Open [18] side by side" [ref=f1e128] [cursor=pointer]
+          - button "Open [21] side by side" [ref=f1e129] [cursor=pointer]
+          - button "Open [22] side by side" [ref=f1e130] [cursor=pointer]
+          - button "Open [23] side by side" [ref=f1e131] [cursor=pointer]
+          - button "Open [24] side by side" [ref=f1e132] [cursor=pointer]
+        - generic [ref=f1e133]:
+          - button "Open [28] side by side" [ref=f1e135] [cursor=pointer]
+          - button "Open [30] side by side" [ref=f1e136] [cursor=pointer]
+          - button "Open [31] side by side" [ref=f1e137] [cursor=pointer]
+          - button "Open [32] side by side" [ref=f1e138] [cursor=pointer]
+          - button "Open [38] side by side" [ref=f1e139] [cursor=pointer]
+    - generic [ref=f1e146]:
+      - banner [ref=f1e147]:
+        - generic [ref=f1e148]: "1"
+        - generic [ref=f1e149]: Figure 1
+        - button "Close Figure 1" [ref=f1e150]: ×
+      - button [ref=f1e151]:
+        - 'img "Figure 1: The Transformer - model architecture." [ref=f1e152]'
+      - paragraph [ref=f1e153]: "Figure 1: The Transformer - model architecture."
+      - contentinfo [ref=f1e154]:
+        - generic [ref=f1e155]: referenced from
+        - button "p.3" [ref=f1e156]

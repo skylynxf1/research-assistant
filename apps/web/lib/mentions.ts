@@ -195,8 +195,30 @@ export function rectForRange(
   start: number,
   end: number,
 ): BBox | null {
-  const touched = new Set(owners.slice(start, end));
-  return unionRects([...touched].map((i) => items[i]?.rect).filter(Boolean) as BBox[]);
+  const touched = [...new Set(owners.slice(start, end))];
+
+  const rects = touched
+    .map((itemIndex) => {
+      const rect = items[itemIndex]?.rect;
+      if (!rect) return null;
+
+      // pdf.js frequently emits an entire line as one item, so using its rect verbatim
+      // would underline the whole line. Interpolate across the item by character
+      // position instead. Proportional fonts make this approximate, but a slightly
+      // imprecise underline is far better than one covering half a paragraph.
+      const first = owners.indexOf(itemIndex);
+      const last = owners.lastIndexOf(itemIndex);
+      const length = last - first + 1;
+      if (length <= 0) return rect;
+
+      const from = (Math.max(start, first) - first) / length;
+      const to = (Math.min(end, last + 1) - first) / length;
+      const width = rect[2] - rect[0];
+      return [rect[0] + width * from, rect[1], rect[0] + width * to, rect[3]] as BBox;
+    })
+    .filter(Boolean) as BBox[];
+
+  return unionRects(rects);
 }
 
 function unionRects(rects: BBox[]): BBox | null {
@@ -263,8 +285,7 @@ export function findMentions(
     const numbers = expandNumbers(match.groups?.numbers ?? "");
     if (numbers.length === 0) continue;
 
-    const touched = new Set(owners.slice(start, end));
-    const rect = unionRects([...touched].map((i) => items[i]?.rect).filter(Boolean) as BBox[]);
+    const rect = rectForRange(items, owners, start, end);
 
     // A caption is not a mention of itself. Without this every figure gains a spurious
     // self-mention and the reverse index is wrong on every paper.

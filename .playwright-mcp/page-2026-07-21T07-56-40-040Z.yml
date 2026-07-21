@@ -1,0 +1,3 @@
+- generic [active] [ref=f1e1]:
+  - paragraph [ref=f1e2]: Loading reader…
+  - button "Open Next.js Dev Tools" [ref=f1e8] [cursor=pointer]

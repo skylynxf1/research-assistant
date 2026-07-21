@@ -23,3 +23,7 @@ out/
 # OS
 Thumbs.db
 .DS_Store
+
+# Local screenshot/debug artifacts
+/apps/web/.playwright-mcp/
+*.local.png

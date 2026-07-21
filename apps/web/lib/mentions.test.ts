@@ -183,6 +183,22 @@ describe("precision over recall", () => {
     expect(findMentions(line(["Figure", "1"]), { page: 2, assets })[0].assetId).toBe("fig-1");
   });
 
+  it("underlines only the mention, not the whole line it sits in", () => {
+    // pdf.js often emits a whole line as one item. Using that item's rect verbatim
+    // underlines half a paragraph, which is both ugly and overlaps other hotspots.
+    const items: PageTextItem[] = [
+      {
+        str: "connected layers, shown in Figure 1, respectively.",
+        hasEOL: true,
+        rect: [0.1, 0.5, 0.9, 0.512],
+      },
+    ];
+    const rect = detect(items)[0].rect!;
+    const width = rect[2] - rect[0];
+    expect(width).toBeLessThan(0.3); // "Figure 1" is a small part of a 0.8-wide line
+    expect(rect[0]).toBeGreaterThan(0.4); // and it starts well into the line
+  });
+
   it("gives every mention a rect covering its surface form", () => {
     const mention = detect(line(["as", "shown", "in", "Figure", "1,", "we"]))[0];
     expect(mention.rect).not.toBeNull();

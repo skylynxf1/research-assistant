@@ -29,8 +29,9 @@ from extract.manifest import ScannedPdfError, build_manifest
 
 DEFAULT_DATA_DIR = Path(__file__).resolve().parents[2] / "data"
 _DIGEST_RE = re.compile(r"^[0-9a-f]{64}$")
-# The reader is local-only, so the dev server is the only origin that matters.
-_ALLOWED_ORIGINS = ["http://localhost:3000", "http://127.0.0.1:3000"]
+# The reader is local-only, so loopback is the only origin that matters. The port is not
+# pinned because Next picks the next free one when 3000 is taken.
+_ALLOWED_ORIGIN_RE = r"http://(localhost|127\.0\.0\.1):\d+"
 
 
 def _require_digest(digest: str) -> str:
@@ -80,7 +81,7 @@ def create_app(*, data_dir: Path | None = None) -> FastAPI:
 
     app.add_middleware(
         CORSMiddleware,
-        allow_origins=_ALLOWED_ORIGINS,
+        allow_origin_regex=_ALLOWED_ORIGIN_RE,
         allow_methods=["GET", "POST"],
         allow_headers=["*"],
     )

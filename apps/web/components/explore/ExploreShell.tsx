@@ -3,6 +3,7 @@
 import { useEffect, useState } from "react";
 import { loadPaperAnalysis, type PaperAnalysis } from "../../lib/explore/analysis";
 import FigureAtlas from "./FigureAtlas";
+import PaperMap from "./PaperMap";
 
 /**
  * Host for the exploration surfaces (§25).
@@ -13,9 +14,12 @@ import FigureAtlas from "./FigureAtlas";
  * "never render a dead affordance" rule the reader follows.
  */
 
-export type ExploreTab = "figures";
+export type ExploreTab = "figures" | "paper-map";
 
-const TABS: { key: ExploreTab; label: string }[] = [{ key: "figures", label: "Figures" }];
+const TABS: { key: ExploreTab; label: string }[] = [
+  { key: "figures", label: "Figures" },
+  { key: "paper-map", label: "Paper Map" },
+];
 
 export default function ExploreShell({ digest }: { digest: string }) {
   const [analysis, setAnalysis] = useState<PaperAnalysis | null>(null);
@@ -76,7 +80,10 @@ export default function ExploreShell({ digest }: { digest: string }) {
         </nav>
       </header>
 
-      <main>{tab === "figures" && <FigureAtlas analysis={analysis} digest={digest} />}</main>
+      <main>
+        {tab === "figures" && <FigureAtlas analysis={analysis} digest={digest} />}
+        {tab === "paper-map" && <PaperMap analysis={analysis} digest={digest} />}
+      </main>
     </div>
   );
 }

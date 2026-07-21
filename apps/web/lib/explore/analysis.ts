@@ -16,15 +16,18 @@
  */
 
 import { loadManifest, pdfUrl } from "../api";
+import { findCitations, type Citation } from "../citations";
 import type { Manifest } from "../manifest";
 import { buildReverseIndex, findMentions, type Mention } from "../mentions";
 import { loadPdf, pageTextItems } from "../pdf";
+import { citationBodyItems } from "./bibliography";
 
 export interface PaperAnalysis {
   manifest: Manifest;
   /** assetId -> every mention of it, in reading order. */
   reverseIndex: Map<string, Mention[]>;
   mentionsByPage: Mention[][];
+  citationsByPage: Citation[][];
 }
 
 const cache = new Map<string, Promise<PaperAnalysis>>();
@@ -34,15 +37,21 @@ async function analyse(digest: string): Promise<PaperAnalysis> {
   const pdf = await loadPdf(pdfUrl(digest));
 
   const mentionsByPage: Mention[][] = [];
+  const citationsByPage: Citation[][] = [];
+  let bibliographyStarted = false;
   for (let index = 0; index < pdf.numPages; index += 1) {
     const page = await pdf.getPage(index + 1);
     const items = await pageTextItems(page);
     mentionsByPage.push(findMentions(items, { page: index, assets: manifest.assets }));
+    const citationBody = citationBodyItems(items, bibliographyStarted);
+    bibliographyStarted = citationBody.bibliographyStarted;
+    citationsByPage.push(findCitations(citationBody.items, { references: manifest.references }));
   }
 
   return {
     manifest,
     mentionsByPage,
+    citationsByPage,
     reverseIndex: buildReverseIndex(mentionsByPage.flat()),
   };
 }

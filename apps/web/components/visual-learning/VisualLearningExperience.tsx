@@ -1,7 +1,7 @@
 "use client";
 
 import { LoaderCircle, ShieldCheck } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { blobUrl } from "../../lib/api";
 import { challengeEvidence, type ChallengeEvidence } from "../../lib/challenges/contracts";
 import type { EvidenceResolver } from "../../lib/evidence/resource";
@@ -35,6 +35,7 @@ interface Props {
 }
 
 const stages = ["Understanding evidence", "Finding relationships", "Building visual", "Validating sources"];
+const GENERATION_TIMEOUT_MS = 120_000;
 
 function evidenceForId(request: VisualGenerationRequest, index: PaperLearningIndex, id: string): ChallengeEvidence | null {
   const item = request.sourceEvidence.find((candidate) => candidate.id === id);
@@ -91,7 +92,6 @@ export default function VisualLearningExperience({
   const [stage, setStage] = useState(0);
   const [message, setMessage] = useState<string | null>(null);
   const generationKey = request ? `${kind}:${request.paper.paperId}:${request.sourceEvidence.map((item) => item.id).join(",")}` : "none";
-  const activeKey = useRef<string | null>(null);
 
   useEffect(() => {
     if (!request) {
@@ -99,8 +99,9 @@ export default function VisualLearningExperience({
       setMessage("This selection did not resolve to enough verified source evidence.");
       return;
     }
-    if (activeKey.current === generationKey) return;
-    activeKey.current = generationKey;
+    // React Strict Mode deliberately runs effect setup/cleanup twice in development.
+    // Do not suppress the second setup: the first request was aborted by that cleanup.
+    let disposed = false;
     const controller = new AbortController();
     setLearning(null);
     setChallenge(null);
@@ -108,6 +109,7 @@ export default function VisualLearningExperience({
     setLoading(true);
     setStage(0);
     const interval = window.setInterval(() => setStage((value) => Math.min(stages.length - 1, value + 1)), 1300);
+    const timeout = window.setTimeout(() => controller.abort("generation-timeout"), GENERATION_TIMEOUT_MS);
 
     const operation = kind === "visualize"
       ? generateVisualLearning(request, { signal: controller.signal })
@@ -121,16 +123,27 @@ export default function VisualLearningExperience({
       if (kind === "visualize" && "visualizationType" in response.spec) setLearning(response.spec);
       else if ("gameType" in response.spec) setChallenge(response.spec);
     }).catch((error) => {
-      if (controller.signal.aborted) return;
+      if (disposed) return;
       if (kind === "visualize") setLearning(createDeterministicVisualFallback(request));
-      setMessage(error instanceof VisualGenerationClientError ? error.message : "Visual generation failed safely.");
+      setMessage(controller.signal.aborted
+        ? "Local visual generation timed out. A safe source-grounded fallback is available; try a shorter passage if you want to regenerate."
+        : error instanceof VisualGenerationClientError ? error.message : "Visual generation failed safely.");
     }).finally(() => {
       window.clearInterval(interval);
-      if (!controller.signal.aborted) setLoading(false);
+      window.clearTimeout(timeout);
+      if (!disposed) setLoading(false);
     });
 
-    return () => { controller.abort(); window.clearInterval(interval); };
-  }, [generationKey, kind, request]);
+    return () => {
+      disposed = true;
+      controller.abort("effect-cleanup");
+      window.clearInterval(interval);
+      window.clearTimeout(timeout);
+    };
+    // generationKey captures the immutable request identity. Depending on the request
+    // object itself would restart generation when parent contexts are rebuilt unchanged.
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [generationKey, kind]);
 
   const showEvidence = (id: string) => {
     if (!request) return;

@@ -17,6 +17,7 @@ import { paperIdOf, type SourceEvidence } from "../lib/evidence/source";
 import type { CapturedSelection } from "../lib/selection/dom";
 import OverlayCard, { type CardState } from "./OverlayCard";
 import ConnectorLayer from "./ConnectorLayer";
+import { placeCardNearMention, placementForPromotion } from "./connectors/cardPlacement";
 import PdfPageView from "./PdfPageView";
 import SelectionActionPanel from "./selection/SelectionActionPanel";
 import ReaderLearningLayer from "./learning/ReaderLearningLayer";
@@ -120,19 +121,44 @@ export default function Reader({ digest }: { digest: string }) {
   }, [analysis, learningIndex, manifest, selection]);
 
   const openCard = useCallback((assetId: string, hard: boolean, anchorMentionId?: string) => {
+    const mentionRect = anchorMentionId
+      ? document
+          .querySelector<HTMLElement>(`[data-connector-mention="${CSS.escape(anchorMentionId)}"]`)
+          ?.getBoundingClientRect()
+      : null;
+    const placement = mentionRect
+      ? placeCardNearMention(mentionRect, {
+          width: window.innerWidth,
+          height: window.innerHeight,
+        })
+      : null;
     setCards((previous) => {
       const existing = previous.find((card) => card.assetId === assetId);
       if (existing) {
         // Re-opening an auto-docked card promotes it to a hard pin.
-        return previous.map((card) =>
-          card.assetId === assetId
-            ? { ...card, hard: card.hard || hard, anchorMentionId: anchorMentionId ?? card.anchorMentionId }
-            : card,
-        );
+        return previous.map((card) => {
+          if (card.assetId !== assetId) return card;
+          const nextPosition = placementForPromotion(card, hard, placement);
+          return {
+            ...card,
+            ...nextPosition,
+            hard: card.hard || hard,
+            anchorMentionId: anchorMentionId ?? card.anchorMentionId,
+          };
+        });
       }
       const kept = hard ? previous : previous.filter((card) => card.hard);
       const offset = kept.length * 28;
-      return [...kept, { assetId, x: 40 + offset, y: 110 + offset, hard, anchorMentionId }];
+      return [
+        ...kept,
+        {
+          assetId,
+          x: placement?.x ?? 40 + offset,
+          y: placement?.y ?? 110 + offset,
+          hard,
+          anchorMentionId,
+        },
+      ];
     });
     setFocused(assetId);
   }, []);

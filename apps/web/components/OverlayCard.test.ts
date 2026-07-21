@@ -1,5 +1,30 @@
-import { describe, expect, it } from "vitest";
-import { placePopup, transitionPopup, type PopupState } from "./OverlayCard";
+import { createElement } from "react";
+import { renderToStaticMarkup } from "react-dom/server";
+import { describe, expect, it, vi } from "vitest";
+import OverlayCard, { clampPopupPosition, placePopup, transitionPopup, type PopupState } from "./OverlayCard";
+import type { Asset } from "../lib/manifest";
+
+const asset: Asset = {
+  asset_id: "fig-1",
+  kind: "figure",
+  label: "Figure 1",
+  number: "1",
+  page: 2,
+  bbox: [0.1, 0.1, 0.9, 0.8],
+  caption: "The original paper figure caption.",
+  caption_bbox: [0.1, 0.8, 0.9, 0.9],
+  image_url: "/crops/fig-1.png",
+  image_width: 1200,
+  parent_id: null,
+};
+
+const popup: PopupState = {
+  assetId: "fig-1",
+  mode: "open",
+  position: { x: 180, y: 220 },
+  anchorMentionId: "fig-1:p0:m0",
+  z: 3,
+};
 
 describe("placePopup", () => {
   it("returns the same position for identical geometry", () => {
@@ -52,5 +77,37 @@ describe("transitionPopup", () => {
 
   it("moves minimized popups into the dock", () => {
     expect(transitionPopup(popup, { type: "dock" }).mode).toBe("docked");
+  });
+});
+
+describe("OverlayCard", () => {
+  it("clamps a drag position to the viewport edge inset", () => {
+    expect(clampPopupPosition(
+      { x: -20, y: 900 },
+      { width: 390, height: 336 },
+      { width: 900, height: 700 },
+    )).toEqual({ x: 8, y: 356 });
+  });
+
+  it("renders a fixed glass popup with opaque crop and source navigation", () => {
+    const markup = renderToStaticMarkup(createElement(OverlayCard, {
+      asset,
+      popup,
+      mentions: [{ assetId: "fig-1", kind: "figure", number: "1", page: 4, text: "Figure 1", rect: null, index: 0 }],
+      currentPage: 2,
+      onMove: vi.fn(),
+      onPin: vi.fn(),
+      onDock: vi.fn(),
+      onRaise: vi.fn(),
+      onJumpToAsset: vi.fn(),
+      onJumpToMention: vi.fn(),
+    }));
+
+    expect(markup).toContain('data-popup-asset="fig-1"');
+    expect(markup).toContain("fixed overflow-hidden rounded-[20px]");
+    expect(markup).toContain("rounded-[12px] bg-white");
+    expect(markup).toContain("Auto · fades on scroll");
+    expect(markup).toContain("Jump to Figure 1");
+    expect(markup).toContain("p.5");
   });
 });

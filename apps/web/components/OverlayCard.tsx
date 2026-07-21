@@ -1,6 +1,7 @@
 "use client";
 
-import { useEffect, useState } from "react";
+import { ArrowUpRight, Minus, Pin } from "lucide-react";
+import { useRef } from "react";
 import { blobUrl } from "../lib/api";
 import type { Asset } from "../lib/manifest";
 import type { Mention } from "../lib/mentions";
@@ -71,6 +72,17 @@ export function placePopup(input: PlacementInput): { x: number; y: number } {
   return { x: Math.max(8, right), y: desiredY };
 }
 
+export function clampPopupPosition(
+  position: { x: number; y: number },
+  popup: { width: number; height: number },
+  viewport: { width: number; height: number },
+): { x: number; y: number } {
+  return {
+    x: Math.max(8, Math.min(viewport.width - popup.width - 8, position.x)),
+    y: Math.max(8, Math.min(viewport.height - popup.height - 8, position.y)),
+  };
+}
+
 const RAIL_GAP = 12;
 const RAIL_EDGE = 16;
 
@@ -132,6 +144,23 @@ export function capRailCards(cards: CardState[], maximum: number): CardState[] {
 
 interface Props {
   asset: Asset;
+  popup: PopupState;
+  mentions: Mention[];
+  currentPage: number;
+  onMove: (position: { x: number; y: number }) => void;
+  onPin: (pinned: boolean) => void;
+  onDock: () => void;
+  onRaise: () => void;
+  onJumpToAsset: () => void;
+  onJumpToMention: (mention: Mention) => void;
+}
+
+/**
+ * Temporary compatibility for the rail-era Reader call sites. Task 4 removes this
+ * branch when it migrates Reader to the popup controller.
+ */
+interface LegacyRailProps {
+  asset: Asset;
   card: CardState;
   mentions: Mention[];
   currentPage: number;
@@ -150,122 +179,133 @@ interface Props {
   onExpand: () => void;
 }
 
-export default function OverlayCard({
-  asset,
-  card,
-  mentions,
-  currentPage,
-  focused,
-  reciprocal,
-  anchorVisible,
-  positioned,
-  y,
-  scrollDriven,
-  variant = "rail",
-  compact = false,
-  onClose,
-  onFocus,
-  onHoverChange,
-  onJumpToMention,
-  onExpand,
-}: Props) {
-  const [entered, setEntered] = useState(false);
-  const [closing, setClosing] = useState(false);
+type OverlayCardProps = Props | LegacyRailProps;
 
-  useEffect(() => {
-    const frame = window.requestAnimationFrame(() => setEntered(true));
-    return () => window.cancelAnimationFrame(frame);
-  }, []);
+function isPopupProps(props: OverlayCardProps): props is Props {
+  return "popup" in props;
+}
 
-  const dismiss = () => {
-    if (window.matchMedia?.("(prefers-reduced-motion: reduce)").matches) {
-      onClose();
-      return;
-    }
-    setClosing(true);
-    window.setTimeout(onClose, 120);
+export default function OverlayCard(props: OverlayCardProps) {
+  const rootRef = useRef<HTMLElement | null>(null);
+  const drag = useRef<{ pointerId: number; dx: number; dy: number } | null>(null);
+  const legacy = !isPopupProps(props);
+  const popup = legacy
+    ? ({
+        assetId: props.card.assetId,
+        mode: props.card.hard ? "pinned" : "open",
+        position: { x: 16, y: props.y },
+        anchorMentionId: props.card.anchorMentionId,
+        z: 1,
+      } satisfies PopupState)
+    : props.popup;
+  const onMove = legacy ? () => props.onFocus() : props.onMove;
+  const onPin = legacy ? () => props.onFocus() : props.onPin;
+  const onDock = legacy ? props.onClose : props.onDock;
+  const onRaise = legacy ? props.onFocus : props.onRaise;
+  const onJumpToAsset = legacy ? props.onExpand : props.onJumpToAsset;
+  const onJumpToMention = props.onJumpToMention;
+
+  const onPointerDown = (event: React.PointerEvent) => {
+    if (!popup.position) return;
+    onRaise();
+    drag.current = {
+      pointerId: event.pointerId,
+      dx: event.clientX - popup.position.x,
+      dy: event.clientY - popup.position.y,
+    };
+    event.currentTarget.setPointerCapture(event.pointerId);
   };
 
-  const isRail = variant === "rail";
-  const translatedY = y + (entered ? 0 : 8);
+  const onPointerMove = (event: React.PointerEvent) => {
+    if (!drag.current || drag.current.pointerId !== event.pointerId) return;
+    const bounds = rootRef.current?.getBoundingClientRect();
+    const width = bounds?.width ?? 390;
+    const height = bounds?.height ?? 336;
+    onMove(clampPopupPosition(
+      { x: event.clientX - drag.current.dx, y: event.clientY - drag.current.dy },
+      { width, height },
+      { width: window.innerWidth, height: window.innerHeight },
+    ));
+  };
 
   return (
     <article
-      data-rail-card={asset.asset_id}
-      tabIndex={0}
-      onMouseEnter={() => onHoverChange(true)}
-      onMouseLeave={() => onHoverChange(false)}
-      onFocus={() => {
-        onFocus();
-        onHoverChange(true);
-      }}
-      onBlur={(event) => {
-        if (!event.currentTarget.contains(event.relatedTarget)) onHoverChange(false);
-      }}
-      className={`group overflow-hidden rounded-md border bg-neutral-50 outline-none dark:bg-neutral-900 ${
-        focused || reciprocal
-          ? "border-sky-500"
-          : "border-neutral-900/10 dark:border-white/10"
-      } ${
-        scrollDriven
-          ? "transition-none"
-          : "transition-[transform,opacity,border-color] duration-200 ease-[cubic-bezier(0.2,0,0,1)] motion-reduce:transition-opacity"
-      } ${isRail ? "absolute inset-x-0" : "relative w-full"}`}
+      ref={rootRef}
+      data-popup-asset={props.asset.asset_id}
+      className="fixed overflow-hidden rounded-[20px] border border-white/95 bg-white/70 shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_24px_70px_rgba(15,23,42,0.22)] backdrop-blur-[28px] backdrop-saturate-[1.6] dark:border-white/15 dark:bg-slate-900/75"
       style={{
-        transform: isRail
-          ? `translateY(${translatedY}px)${closing ? " scale(0.98)" : ""}`
-          : closing
-            ? "scale(0.98)"
-            : undefined,
-        opacity: closing || !positioned ? 0 : entered ? (anchorVisible ? 1 : 0.55) : 0,
+        left: popup.position?.x ?? 0,
+        top: popup.position?.y ?? 84,
+        width: props.asset.kind === "table" ? 340 : 390,
+        zIndex: popup.z,
       }}
+      onPointerDown={onRaise}
     >
-      <header className="flex items-center gap-2 border-b border-neutral-900/10 px-3 py-2 dark:border-white/10">
-        <span className="flex-1 truncate text-[11px] font-medium uppercase tracking-[0.08em] text-neutral-500 dark:text-neutral-400">
-          {asset.label}
+      <header
+        className="flex cursor-grab touch-none select-none items-center gap-2 px-[18px] pb-2 pt-3 active:cursor-grabbing"
+        onPointerDown={onPointerDown}
+        onPointerMove={onPointerMove}
+        onPointerUp={() => { drag.current = null; }}
+        onPointerCancel={() => { drag.current = null; }}
+      >
+        <span className="text-[11px] font-semibold uppercase tracking-[0.14em] text-[#3b5bdb]">{props.asset.label}</span>
+        <span className="text-[11px] text-slate-400">· page {props.asset.page + 1}</span>
+        <span className="flex flex-1 justify-center gap-[3px] opacity-35" aria-hidden="true">
+          {Array.from({ length: 5 }, (_, index) => <i key={index} className="h-[3px] w-[3px] rounded-full bg-slate-900 dark:bg-white" />)}
         </span>
-        {!card.hard && <span className="text-[11px] text-neutral-400">auto</span>}
         <button
           type="button"
-          onClick={dismiss}
-          aria-label={`Close ${asset.label}`}
-          className="rounded px-1 text-neutral-500 hover:bg-neutral-200 focus-visible:outline-2 focus-visible:outline-sky-500 dark:hover:bg-neutral-800"
+          aria-pressed={popup.mode === "pinned"}
+          onClick={() => onPin(popup.mode !== "pinned")}
+          className="grid h-[26px] w-[26px] place-items-center rounded-lg text-slate-500 hover:bg-slate-900/5 aria-pressed:bg-[#3b5bdb] aria-pressed:text-white"
         >
-          ×
+          <Pin size={14} aria-hidden="true" />
+        </button>
+        <button
+          type="button"
+          onClick={onDock}
+          aria-label={`Minimize ${props.asset.label}`}
+          className="grid h-[26px] w-[26px] place-items-center rounded-lg text-slate-500 hover:bg-slate-900/5"
+        >
+          <Minus size={16} aria-hidden="true" />
         </button>
       </header>
 
-      <button type="button" onClick={onExpand} className="block w-full bg-white p-1" title="Enlarge figure">
-        <img
-          src={blobUrl(asset.image_url)}
-          alt={asset.caption}
-          className={`${compact ? "max-h-24" : "max-h-80"} w-full bg-white object-contain`}
-        />
-      </button>
+      <div className="mx-[18px] overflow-hidden rounded-[12px] bg-white p-1">
+        <img src={blobUrl(props.asset.image_url)} alt={props.asset.caption} className="max-h-80 w-full bg-white object-contain" />
+      </div>
 
-      <details className={`${compact ? "hidden" : "block"} border-t border-neutral-900/10 px-3 py-2 text-[13px] leading-[1.5] text-neutral-700 dark:border-white/10 dark:text-neutral-300`}>
-        <summary className="line-clamp-3 cursor-pointer list-none">{asset.caption}</summary>
-        <p className="pt-2">{asset.caption}</p>
-      </details>
+      <div className="px-[18px] pb-3 pt-2">
+        <p className="text-[12.5px] leading-[1.55] text-slate-700 dark:text-slate-200">{props.asset.caption}</p>
+        <button
+          type="button"
+          onClick={onJumpToAsset}
+          className="mt-2 inline-flex items-center gap-1 rounded-full border border-[#3b5bdb]/20 bg-[#3b5bdb]/10 px-3 py-1 text-[12.5px] font-semibold text-[#2f4ac2] hover:bg-[#3b5bdb]/20"
+        >
+          Jump to {props.asset.label}
+          <ArrowUpRight size={14} aria-hidden="true" />
+        </button>
+      </div>
 
-      {mentions.length > 0 && (
-        <footer className="flex flex-wrap items-center gap-1 border-t border-neutral-900/10 px-3 py-2 text-xs dark:border-white/10">
-          {mentions.map((mention) => (
+      <footer className="flex flex-wrap items-center gap-1 border-t border-slate-900/10 px-[18px] py-2 dark:border-white/10">
+        <span className="mr-1 text-[11px] text-slate-400">
+          {popup.mode === "pinned" ? "Pinned" : "Auto · fades on scroll"}
+        </span>
+        {props.mentions.map((mention) => (
             <button
               key={`${mention.page}-${mention.index}`}
               type="button"
               onClick={() => onJumpToMention(mention)}
-              className={`rounded px-2 py-1 font-mono focus-visible:outline-2 focus-visible:outline-sky-500 ${
-                mention.page === currentPage
-                  ? "bg-sky-500 text-white"
-                  : "text-neutral-500 hover:bg-neutral-200 dark:text-neutral-400 dark:hover:bg-neutral-800"
+              className={`rounded-full px-2 py-1 text-[11px] font-semibold focus-visible:outline-2 focus-visible:outline-[#3b5bdb] ${
+                mention.page === props.currentPage
+                  ? "bg-[#3b5bdb] text-white"
+                  : "bg-slate-900/5 text-slate-500 hover:bg-slate-900/10 dark:bg-white/10 dark:text-slate-300"
               }`}
             >
               p.{mention.page + 1}
             </button>
-          ))}
-        </footer>
-      )}
+        ))}
+      </footer>
     </article>
   );
 }

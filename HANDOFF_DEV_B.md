@@ -1,7 +1,7 @@
 # Developer B handoff — Exploration, Workspace & Accessibility
 
-**Status:** Phases 1–6 complete. Phase 7 is next.
-**Last completed branch:** `explore/citation-graph` — lazy literal citation network and provider.
+**Status:** Phases 1–7 complete. Phase 8 is next.
+**Last completed branch:** `workspace/pinboard` — persisted source boards and comparisons.
 **Working tree:** clean, `main` in sync with `origin/main`, no servers running.
 
 This document hands off the Developer B track to whoever picks it up next. It assumes you
@@ -222,6 +222,17 @@ with no dead link after the API was stopped, and deletion cleanup.
   contract: paper lookup, loaded literal neighbours, collection papers, and bounded lexical
   evidence lookup over source references.
 
+### Phase 7 — Pinboard and comparison
+
+- Collections are now data version 2 with `boardEdges`; repository reads migrate version-1
+  records in place without resetting IndexedDB or losing evidence.
+- **`apps/web/lib/workspace/board.ts`** — immutable add/move/remove/connect/pin/compare
+  operations. All connections are `user-connected`; missing endpoints and self-edges drop.
+- **`/workspace/collections/<id>/board`** — persisted source cards on a large canvas with
+  draggable positions, explicit user connections, source jumps, and honest unavailable state.
+- **`/workspace/collections/<id>/compare`** — user-selected source evidence shown side by
+  side; saved drafts contain pointers only and generate no conclusions.
+
 ---
 
 ## 7. Current state
@@ -233,10 +244,11 @@ main  (updated after each green phase; see git log)
 ├── explore/paper-map          merged, pushed
 ├── workspace/collections      merged, pushed
 ├── accessibility/reflow       merged, pushed
-└── explore/citation-graph     complete, pushed
+├── explore/citation-graph     merged, pushed
+└── workspace/pinboard         complete, pushed
 ```
 
-Tests: **119 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
+Tests: **127 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
 build clean.
 No background processes; ports 8000 and 3000 are free.
 
@@ -267,6 +279,11 @@ apps/web/app/reflow/[digest]/page.tsx
 apps/web/lib/explore/citation-graph.ts       + citation-graph.test.ts
 apps/web/lib/explore/cross-paper-provider.ts + cross-paper-provider.test.ts
 apps/web/components/explore/CitationGraph.tsx
+apps/web/lib/workspace/board.ts              + board.test.ts
+apps/web/lib/workspace/evidence.ts           + evidence.test.ts
+apps/web/components/workspace/WorkspacePinboard.tsx
+apps/web/components/workspace/EvidenceComparison.tsx
+apps/web/app/workspace/collections/[collectionId]/{board,compare}/page.tsx
 ```
 
 `apps/web/package*.json` add the test-only `fake-indexeddb` dependency. `Reader.tsx` has
@@ -277,11 +294,6 @@ not been touched.
 ## 8. What is next — the remaining phase plan
 
 Follows the doc's Dev B staging (§17). One branch per phase; merge to `main` when green.
-
-### Phase 7 — `workspace/pinboard` (§B9) + comparison (§B10)
-Canvas for organizing figures, tables, passages, citations. Connections are user-created
-unless clearly labelled generated. Comparison is user-selected evidence in Phase 1, not
-automated claim generation.
 
 ### Phase 8 — lineage, timelines, constellation (§B5–B7)
 All on the shared `ResearchGraph`. Generated lineage edges must be visually distinct from

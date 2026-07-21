@@ -18,6 +18,7 @@ import type { CapturedSelection } from "../lib/selection/dom";
 import OverlayCard, {
   isMentionActive,
   placePopup,
+  shouldOpenPopup,
   transitionPopup,
   type PopupEvent,
   type PopupRect,
@@ -94,7 +95,6 @@ export default function Reader({ digest }: { digest: string }) {
 
   const scrollRef = useRef<HTMLDivElement | null>(null);
   const scrollFrameRef = useRef<number | null>(null);
-  const zCounter = useRef(100);
 
   // Load the manifest and the PDF, then analyse every page's text once. The reverse
   // index has to exist before the first click, and scanning text (without rendering) is
@@ -169,6 +169,7 @@ export default function Reader({ digest }: { digest: string }) {
 
       setPopups((previous) => {
         const existing = previous[assetId];
+        if (!shouldOpenPopup(existing, pin)) return previous;
         const position =
           existing?.position ??
           placePopup({
@@ -184,7 +185,7 @@ export default function Reader({ digest }: { digest: string }) {
             mode: pin ? "pinned" : existing?.mode === "pinned" ? "pinned" : "open",
             position,
             anchorMentionId: mentionId,
-            z: ++zCounter.current,
+            z: Math.max(100, ...Object.values(previous).map((popup) => popup.z)) + 1,
           },
         };
       });
@@ -211,7 +212,8 @@ export default function Reader({ digest }: { digest: string }) {
     setPopups((current) => {
       const popup = current[assetId];
       if (!popup) return current;
-      return { ...current, [assetId]: { ...popup, z: ++zCounter.current } };
+      const z = Math.max(100, ...Object.values(current).map((item) => item.z)) + 1;
+      return { ...current, [assetId]: { ...popup, z } };
     });
   }, []);
 
@@ -245,9 +247,17 @@ export default function Reader({ digest }: { digest: string }) {
         viewport: { width: window.innerWidth, height: window.innerHeight },
         occupied: visiblePopupRects(popups, assetId),
       });
-      updatePopup(assetId, { type: "restore", position, z: ++zCounter.current });
+      setPopups((current) => {
+        const popup = current[assetId];
+        if (!popup) return current;
+        const z = Math.max(100, ...Object.values(current).map((item) => item.z)) + 1;
+        return {
+          ...current,
+          [assetId]: transitionPopup(popup, { type: "restore", position, z }),
+        };
+      });
     },
-    [popups, updatePopup],
+    [popups],
   );
 
   const jumpToAsset = useCallback(
@@ -311,11 +321,16 @@ export default function Reader({ digest }: { digest: string }) {
     if (!scroll) return;
 
     const activeByAsset = new Map<string, HTMLElement>();
+    const viewportTop = scroll.getBoundingClientRect().top;
     for (const mention of scroll.querySelectorAll<HTMLElement>("[data-mention-id]")) {
       const assetId = mention.dataset.mentionAsset;
       if (
         assetId &&
-        isMentionActive(mention.getBoundingClientRect(), scroll.clientHeight) &&
+        isMentionActive(
+          mention.getBoundingClientRect(),
+          scroll.clientHeight,
+          viewportTop,
+        ) &&
         !activeByAsset.has(assetId)
       ) {
         activeByAsset.set(assetId, mention);
@@ -652,27 +667,29 @@ export default function Reader({ digest }: { digest: string }) {
         )}
       </div>
 
-      {visiblePopups.map((popup) => {
-        const asset = assetsById.get(popup.assetId);
-        if (!asset) return null;
-        return (
-          <OverlayCard
-            key={popup.assetId}
-            asset={asset}
-            popup={popup}
-            mentions={reverseIndex.get(popup.assetId) ?? []}
-            currentPage={currentPage}
-            onMove={(position) => updatePopup(popup.assetId, { type: "drag", position })}
-            onPin={(pinned) =>
-              updatePopup(popup.assetId, { type: pinned ? "pin" : "unpin" })
-            }
-            onDock={() => updatePopup(popup.assetId, { type: "dock" })}
-            onRaise={() => raisePopup(popup.assetId)}
-            onJumpToAsset={() => jumpToAsset(popup.assetId)}
-            onJumpToMention={jumpToMention}
-          />
-        );
-      })}
+      <div className="pointer-events-none fixed inset-0 z-[100]">
+        {visiblePopups.map((popup) => {
+          const asset = assetsById.get(popup.assetId);
+          if (!asset) return null;
+          return (
+            <OverlayCard
+              key={popup.assetId}
+              asset={asset}
+              popup={popup}
+              mentions={reverseIndex.get(popup.assetId) ?? []}
+              currentPage={currentPage}
+              onMove={(position) => updatePopup(popup.assetId, { type: "drag", position })}
+              onPin={(pinned) =>
+                updatePopup(popup.assetId, { type: pinned ? "pin" : "unpin" })
+              }
+              onDock={() => updatePopup(popup.assetId, { type: "dock" })}
+              onRaise={() => raisePopup(popup.assetId)}
+              onJumpToAsset={() => jumpToAsset(popup.assetId)}
+              onJumpToMention={jumpToMention}
+            />
+          );
+        })}
+      </div>
 
       {Object.values(popups).some((popup) => popup.mode === "docked") && (
         <aside

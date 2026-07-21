@@ -33,8 +33,21 @@ export interface PlacementInput {
 export function isMentionActive(
   rect: Pick<DOMRect, "top">,
   viewportHeight: number,
+  viewportTop = 0,
 ): boolean {
-  return rect.top > viewportHeight * 0.1 && rect.top < viewportHeight * 0.82;
+  const top = rect.top - viewportTop;
+  return top > viewportHeight * 0.1 && top < viewportHeight * 0.82;
+}
+
+export function shouldOpenPopup(
+  existing: PopupState | undefined,
+  pin: boolean,
+): boolean {
+  return (
+    pin ||
+    existing === undefined ||
+    existing.mode === "idle"
+  );
 }
 
 export type PopupEvent =
@@ -153,7 +166,7 @@ export default function OverlayCard(props: Props) {
     <article
       ref={rootRef}
       data-popup-asset={props.asset.asset_id}
-      className="fixed overflow-hidden rounded-[20px] border border-white/95 bg-white/70 shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_24px_70px_rgba(15,23,42,0.22)] backdrop-blur-[28px] backdrop-saturate-[1.6] dark:border-white/15 dark:bg-slate-900/75"
+      className="fixed overflow-hidden rounded-[20px] border border-white/95 bg-white/70 shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_24px_70px_rgba(15,23,42,0.22)] backdrop-blur-[28px] backdrop-saturate-[1.6] pointer-events-auto dark:border-white/15 dark:bg-slate-900/75"
       style={{
         left: popup.position?.x ?? 0,
         top: popup.position?.y ?? 84,

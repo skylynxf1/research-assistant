@@ -5,6 +5,7 @@ import OverlayCard, {
   clampPopupPosition,
   isMentionActive,
   placePopup,
+  shouldOpenPopup,
   transitionPopup,
   type PopupState,
 } from "./OverlayCard";
@@ -37,6 +38,23 @@ describe("isMentionActive", () => {
     expect(isMentionActive({ top: 200 }, 1000)).toBe(true);
     expect(isMentionActive({ top: 50 }, 1000)).toBe(false);
     expect(isMentionActive({ top: 900 }, 1000)).toBe(false);
+  });
+
+  it("measures the reading zone from a non-zero scroll-root offset", () => {
+    expect(isMentionActive({ top: 250 }, 1000, 200)).toBe(false);
+    expect(isMentionActive({ top: 400 }, 1000, 200)).toBe(true);
+    expect(isMentionActive({ top: 1050 }, 1000, 200)).toBe(false);
+  });
+});
+
+describe("shouldOpenPopup", () => {
+  it("does not reopen docked or re-raise visible popups during ambient activation", () => {
+    expect(shouldOpenPopup({ ...popup, mode: "docked" }, false)).toBe(false);
+    expect(shouldOpenPopup({ ...popup, mode: "open" }, false)).toBe(false);
+    expect(shouldOpenPopup({ ...popup, mode: "pinned" }, false)).toBe(false);
+    expect(shouldOpenPopup({ ...popup, mode: "idle" }, false)).toBe(true);
+    expect(shouldOpenPopup({ ...popup, mode: "docked" }, true)).toBe(true);
+    expect(shouldOpenPopup(undefined, false)).toBe(true);
   });
 });
 

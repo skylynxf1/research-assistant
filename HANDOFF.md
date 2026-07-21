@@ -66,6 +66,29 @@ Known coordination points: Phase 4 must use Dev B's `CrossPaperContextProvider` 
 
 ---
 
+### DEV A PHASE CHECKPOINT
+
+Phase: 4 - Cross-paper learning
+Dev A checkpoint SHA: `1dbfd20684e84fc89f7a5eb76d89b2d2df62909b`
+Branch: `phase-1-a`
+Features completed: provider-only Paper vs Paper and cross-paper concept quest, verified chronology ordering, supplied evolution ordering, and a reusable CrossPaperQuest renderer. Direct asset/caption evidence is required for scored two-paper relationships; generated evolution proposals are visibly Explore-only.
+Tests: 181 web tests passed; 151 Python tests passed.
+Build: TypeScript typecheck and production web build passed.
+Limitations: no comparison is rendered until both paper data and an evidence resolver are available. Timeline facts come from Dev B’s verified timeline data; chronology is not presented as influence.
+
+### FROZEN MAIN INTEGRATION
+
+Dev A Phase 4 SHA: `1dbfd20684e84fc89f7a5eb76d89b2d2df62909b`
+Frozen main SHA: `4c9a9fb930bc8c625333566e402b1222c2b1fbcd`
+Latest main changes since the prior snapshot: none.
+Integration commit SHA: `a9cf10bc62499cdc0c75eae6e9e85aebaab28551`
+Conflicts: none; the frozen SHA was already an ancestor.
+Resolution: no merge delta; empty checkpoint records the exact inspected snapshot after the Phase 4 gate.
+Tests after checkpoint: 181 web tests passed; 151 Python tests passed; TypeScript typecheck and production web build passed.
+Known coordination points: Cross-paper game factories depend only on `CrossPaperContextProvider` and Dev B timeline data types; do not route them through an exploration component or infer semantic evolution.
+
+---
+
 ## What this is, in one paragraph
 
 A PDF reader for arXiv AI/ML papers. A sentence on page 3 says "as shown in Figure 1";

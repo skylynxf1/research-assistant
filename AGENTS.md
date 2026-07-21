@@ -25,8 +25,8 @@ Everything below marked *planned* is not built.
 Two source-of-truth documents:
 
 - `PROJECT_SPEC_1.md` — the full product spec (M0→M5). Owns *why*.
-- `SHIP_PLAN.md` — the approved 30-hour ship
-  plan. Owns *what we're actually building now*. **Read this before starting work.**
+- `SHIP_PLAN.md` — the approved 30-hour ship plan. Owns *what we're actually building
+  now*. **Read this before starting work.**
 
 The plan deliberately deviates from the spec in three places, all agreed with the user.
 Do not "fix" the code back toward the spec without checking the plan first:

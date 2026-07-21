@@ -16,6 +16,10 @@ out/
 # Golden fixture PDFs are large; ground-truth labels are tracked, PDFs are not
 /fixtures/**/*.pdf
 
+# Agent-harness local files. The tracked guidance lives in AGENTS.md; AGENTS.md is a
+# one-line import of it so a local harness picks it up without the repo carrying it.
+AGENTS.md
+
 # Env
 .env
 .env.local

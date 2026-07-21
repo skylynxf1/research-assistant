@@ -4,19 +4,21 @@ import Image from "next/image";
 import { useEffect, useMemo, useState } from "react";
 import { blobUrl } from "../../lib/api";
 import { addPaperToCitationGraph, emptyCitationGraph } from "../../lib/explore/citation-graph";
+import { buildAuthorMethodNetwork } from "../../lib/explore/author-method-network";
 import { browseBenchmarks, buildCollectionIndex, searchCollection, type CollectionIndexEntry } from "../../lib/explore/collection-index";
 import { loadPaperAnalysis, type PaperAnalysis } from "../../lib/explore/analysis";
 import { buildConstellation, buildFigureTimeline, buildLineage, buildPaperTimeline } from "../../lib/explore/research-views";
 import { IndexedDbWorkspaceRepository } from "../../lib/workspace/indexed-db";
 import type { ResearchCollection } from "../../lib/workspace/types";
 
-type ResearchTab = "search" | "benchmarks" | "lineage" | "timeline" | "constellation";
+type ResearchTab = "search" | "benchmarks" | "lineage" | "timeline" | "constellation" | "networks";
 const TABS: Array<{ id: ResearchTab; label: string }> = [
   { id: "search", label: "Search" },
   { id: "benchmarks", label: "Benchmarks" },
   { id: "lineage", label: "Lineage" },
   { id: "timeline", label: "Timeline" },
   { id: "constellation", label: "Constellation" },
+  { id: "networks", label: "Authors & Methods" },
 ];
 
 function SourceResults({ results }: { results: CollectionIndexEntry[] }) {
@@ -64,6 +66,7 @@ export default function CollectionResearch({ collectionId }: { collectionId: str
     () => analyses.reduce(addPaperToCitationGraph, emptyCitationGraph()),
     [analyses],
   );
+  const authorMethodNetwork = useMemo(() => buildAuthorMethodNetwork(analyses), [analyses]);
 
   if (!collection) return <main className="p-8">{error ? <p role="alert" className="text-red-700">{error}</p> : <p className="opacity-60">Loading research views…</p>}</main>;
   const unavailable = collection.papers.filter((paper) => !analyses.some((analysis) => analysis.manifest.doc_id.endsWith(paper.paperId)));
@@ -129,6 +132,31 @@ export default function CollectionResearch({ collectionId }: { collectionId: str
             <h2 id="constellation-heading" className="text-xl font-semibold">Collection constellation</h2>
             <p className="mt-1 text-sm opacity-60">Every star has the same radius; size carries no importance claim. Lines are literal citations.</p>
             <div className="mt-5 overflow-x-auto rounded border border-neutral-300 bg-neutral-950 dark:border-neutral-800"><svg viewBox="0 0 500 440" className="min-w-[32rem] text-white" role="img" aria-label={`${constellation.nodes.length} fixed-size paper stars and ${constellation.edges.length} citation edges`}>{constellation.edges.map((edge) => { const from = constellationById.get(edge.source); const to = constellationById.get(edge.target); return from && to ? <line key={`${edge.source}-${edge.target}`} x1={from.x} y1={from.y} x2={to.x} y2={to.y} stroke="#38bdf8" strokeWidth="1" /> : null; })}{constellation.nodes.map((node) => <g key={node.id}><circle cx={node.x} cy={node.y} r={node.radius} fill="#f8fafc" /><text x={node.x} y={node.y + 24} textAnchor="middle" fill="#e2e8f0" fontSize="10">{node.label.length > 28 ? `${node.label.slice(0, 27)}…` : node.label}</text></g>)}</svg></div>
+          </section>
+        ) : null}
+
+        {tab === "networks" ? (
+          <section className="mt-6" aria-labelledby="networks-heading">
+            <h2 id="networks-heading" className="text-xl font-semibold">Literal author and method networks</h2>
+            <p className="mt-1 max-w-3xl text-sm opacity-60">Author strings and coauthor lines come only from references observed in paper text. Method nodes come only from explicit section headings; names and methods are not inferred or merged.</p>
+            <div className="mt-6 grid gap-6 lg:grid-cols-2">
+              <section aria-labelledby="authors-heading" className="rounded-lg border border-neutral-300 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                <h3 id="authors-heading" className="font-semibold">Referenced authors</h3>
+                {authorMethodNetwork.nodes.filter(({ type }) => type === "author").length === 0 ? <p className="mt-3 text-sm opacity-55">No observed references with parsed author strings.</p> : (
+                  <ul className="mt-3 grid gap-2 sm:grid-cols-2">
+                    {authorMethodNetwork.nodes.filter(({ type }) => type === "author").map((node) => <li key={node.id} className="rounded border border-neutral-200 p-3 text-sm dark:border-neutral-800"><span className="font-medium">{node.label}</span>{node.source ? <a href={`/read/${node.source.paperId}#page=${node.source.page}`} className="mt-1 block text-xs text-sky-700 hover:underline dark:text-sky-300">Observed source p.{node.source.page + 1} →</a> : null}</li>)}
+                  </ul>
+                )}
+                <h4 className="mt-5 text-sm font-semibold">Exact coauthor links</h4>
+                <ul className="mt-2 space-y-2 text-sm">{authorMethodNetwork.edges.filter(({ type }) => type === "coauthored").map((edge) => <li key={`${edge.source}-${edge.target}`} className="border-l-2 border-sky-500 pl-3">{authorMethodNetwork.nodes.find(({ id }) => id === edge.source)?.label} — {authorMethodNetwork.nodes.find(({ id }) => id === edge.target)?.label}</li>)}</ul>
+              </section>
+              <section aria-labelledby="methods-heading" className="rounded-lg border border-neutral-300 bg-white p-5 dark:border-neutral-800 dark:bg-neutral-900">
+                <h3 id="methods-heading" className="font-semibold">Explicit method sections</h3>
+                {authorMethodNetwork.nodes.filter(({ type }) => type === "method").length === 0 ? <p className="mt-3 text-sm opacity-55">No section heading explicitly names a method, approach, architecture, or model.</p> : (
+                  <ul className="mt-3 space-y-3">{authorMethodNetwork.nodes.filter(({ type }) => type === "method").map((node) => <li key={node.id} className="rounded border border-neutral-200 p-3 text-sm dark:border-neutral-800"><span className="font-medium">{node.label}</span><span className="mt-1 block text-xs opacity-55">{String(node.metadata.paperTitle || "Paper")}</span>{node.source ? <a href={`/read/${node.source.paperId}#page=${node.source.page}`} className="mt-2 block text-xs text-sky-700 hover:underline dark:text-sky-300">Open method heading on p.{node.source.page + 1} →</a> : null}</li>)}</ul>
+                )}
+              </section>
+            </div>
           </section>
         ) : null}
       </div>

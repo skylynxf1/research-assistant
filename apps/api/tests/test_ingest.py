@@ -79,6 +79,30 @@ def test_title_falls_back_to_largest_text_on_page_one(tmp_path: Path) -> None:
     doc.close()
 
 
+def test_title_ignores_the_rotated_arxiv_stamp(tmp_path: Path) -> None:
+    """Every arXiv PDF carries a sideways stamp down the left margin, set fairly large.
+
+    Taking the largest text on page one picks the stamp on literally every arXiv paper,
+    which is how this was found: three real papers all came back titled "arXiv:...".
+    """
+    doc = fitz.open()
+    page = doc.new_page(width=PAGE_W, height=PAGE_H)
+    # Matches the real thing: 20pt, rotated, and reaching into the top half of the page,
+    # so it beats the 17pt title on size alone.
+    page.insert_text(
+        (40.0, 600.0), "arXiv:1706.03762v7 [cs.CL] 2 Aug 2023", fontsize=20, rotate=90
+    )
+    page.insert_text((150.0, 120.0), "Attention Is All You Need", fontsize=17)
+    page.insert_text((150.0, 160.0), "Ashish Vaswani, Noam Shazeer", fontsize=11)
+    path = tmp_path / "stamped.pdf"
+    doc.save(str(path))
+    doc.close()
+
+    doc = fitz.open(str(path))
+    assert extract_title(doc) == "Attention Is All You Need"
+    doc.close()
+
+
 def test_page_geometry_reports_points(paper_pdf: Path) -> None:
     doc = fitz.open(str(paper_pdf))
     pages = page_geometry(doc)

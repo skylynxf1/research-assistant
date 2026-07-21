@@ -16,7 +16,9 @@ import fitz
 
 from .textnorm import normalize
 
-_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?\s+(\S.*)$")
+# The title after the number must start with a letter, so a table row like
+# "1 24.5 32.1" cannot be read as a heading.
+_NUMBERED_HEADING_RE = re.compile(r"^(\d+(?:\.\d+)*)\.?\s+([A-Za-z].*)$")
 # Unnumbered headings that every paper has. Only accepted when set larger than body text.
 _KNOWN_HEADINGS = {
     "abstract",
@@ -30,6 +32,21 @@ _KNOWN_HEADINGS = {
     "related work",
 }
 _MAX_HEADING_CHARS = 80
+_MAX_HEADING_WORDS = 8
+
+
+def looks_like_heading(text: str) -> bool:
+    """Cheap text-only heading test, with no font information.
+
+    figures.py uses it to bound asset regions: a table region that runs on into the next
+    section heading produces a crop with a stray heading glued to the bottom.
+    """
+    text = text.strip()
+    if not text or len(text) > _MAX_HEADING_CHARS or len(text.split()) > _MAX_HEADING_WORDS:
+        return False
+    if _NUMBERED_HEADING_RE.match(text) is not None:
+        return True
+    return text.lower().rstrip(".") in _KNOWN_HEADINGS
 
 
 @dataclass(frozen=True)

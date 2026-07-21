@@ -177,6 +177,37 @@ cd apps/web && npm run dev
 - Dark mode must invert the page canvas but **not** figure crops — inverting a
   white-background plot makes it unreadable and inverting a photo destroys it.
 
+### Learned while building — each of these cost real debugging time
+
+- **Every arXiv PDF stamps `arXiv:NNNN [cs.CL] date` sideways down the left margin at
+  20pt**, which beats a 17pt title. Take the largest *horizontal* line only
+  (`line["dir"]`), or every paper is titled "arXiv:…".
+- **PyMuPDF emits one "line" per table *cell*, not per row.** So a table's columns are
+  not gaps inside a line; they are several lines sharing a vertical band. `tabular.py`
+  tests both signatures for this reason.
+- **A textual table defeats every word/width/digit heuristic.** Attention's Table 1 is
+  one 39-word block, 59% of the page wide, with no digits. Only column structure
+  separates it from a paragraph.
+- **A synthetic PDF is not a fixture for block-grouping behaviour.** PyMuPDF groups
+  hand-built pages differently from LaTeX output; two tests here passed against synthetic
+  PDFs while the real paper still failed. Test that logic on raw geometry instead.
+- **ACL bibliography lines start with a year** (`2018. Contextual string embeddings…`),
+  which parses as a numbered heading and truncates the reference list to one entry.
+  Heading numbers are capped at two digits; years are four.
+- **Line-break hyphens are often U+2010, not ASCII**, so de-hyphenation must run before
+  punctuation folding — or on text that still has its line breaks. Joining lines with a
+  space first destroys the signal.
+- **The Windows console is cp1252** and cannot encode most author lists (`Łukasz
+  Kaiser`). The CLI reconfigures stdout to UTF-8.
+- **`"use client"` does not prevent server rendering.** Client components are still
+  server-rendered for the initial HTML, and pdf.js touches DOM APIs at import, so the
+  reader must be loaded through `dynamic(..., { ssr: false })`.
+- **pdf.js 6 requires `canvas` in render params**, not just `canvasContext`.
+- **pdf.js often emits a whole line as one text item**, so a hotspot built from its rect
+  underlines a whole line. Interpolate across the item by character position.
+- **pdf.js omits spaces between items**, leaving word boundaries implied by geometry;
+  without inserting them a line flattens to `asshowninFigure1` and nothing matches.
+
 ## Keeping this file current
 
 When a session gets corrected, discovers a non-obvious detail, or finds this file wrong,

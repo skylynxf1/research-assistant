@@ -110,6 +110,7 @@ function CollectionCard({
       <nav className="mt-5 flex gap-2 border-t border-neutral-200 pt-4 text-sm dark:border-neutral-800" aria-label={`${collection.name} workspace tools`}>
         <a href={`/workspace/collections/${collection.id}/board`} className="rounded border px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800">Open pinboard</a>
         <a href={`/workspace/collections/${collection.id}/compare`} className="rounded border px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800">Compare evidence</a>
+        <a href={`/workspace/collections/${collection.id}/research`} className="rounded border px-3 py-2 hover:bg-neutral-100 dark:hover:bg-neutral-800">Research views</a>
       </nav>
 
       <section className="mt-5" aria-labelledby={`notes-${collection.id}`}>

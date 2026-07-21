@@ -1,7 +1,7 @@
 # Developer B handoff — Exploration, Workspace & Accessibility
 
-**Status:** Phases 1–8 complete. Phase 9 accessibility hardening is next.
-**Last completed branch:** `explore/research-views` — deterministic collection research surfaces.
+**Status:** Core Phases 1–9 complete. Final ownership audit found author/method networks still to land.
+**Last completed branch:** `accessibility/hardening` — typography, keyboard, semantics, and read-aloud.
 **Working tree:** clean, `main` in sync with `origin/main`, no servers running.
 
 This document hands off the Developer B track to whoever picks it up next. It assumes you
@@ -244,6 +244,17 @@ with no dead link after the API was stopped, and deletion cleanup.
 - **`/workspace/collections/<id>/research`** — Search, Benchmarks, Lineage, Timeline, and
   Constellation views. Missing local papers stay listed but do not create dead affordances.
 
+### Phase 9 — Accessibility hardening
+
+- **`apps/web/lib/accessibility/settings.ts`** — independently clamped font size, line
+  spacing, paragraph spacing, reading width, contrast, reduced motion, and font selection;
+  plus paragraph navigation and paragraph-only speech input.
+- Reflow exposes visible reading controls, native semantic headings/paragraphs, meaningful
+  source/asset/citation names, captions, page numbers, polite status, Previous/Next and J/K
+  paragraph movement, and feature-detected Speech Synthesis over reflow text only.
+- Pinboard cards now have four named directional buttons, so drag is never the only way to
+  position evidence.
+
 ---
 
 ## 7. Current state
@@ -257,10 +268,11 @@ main  (updated after each green phase; see git log)
 ├── accessibility/reflow       merged, pushed
 ├── explore/citation-graph     merged, pushed
 ├── workspace/pinboard         merged, pushed
-└── explore/research-views     complete, pushed
+├── explore/research-views     merged, pushed
+└── accessibility/hardening   complete, pushed
 ```
 
-Tests: **134 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
+Tests: **138 web** (vitest) + **151 Python** (pytest), all green. Typecheck and production
 build clean.
 No background processes; ports 8000 and 3000 are free.
 
@@ -300,6 +312,7 @@ apps/web/lib/explore/research-views.ts       + research-views.test.ts
 apps/web/lib/explore/collection-index.ts     + collection-index.test.ts
 apps/web/components/workspace/CollectionResearch.tsx
 apps/web/app/workspace/collections/[collectionId]/research/page.tsx
+apps/web/lib/accessibility/settings.ts       + settings.test.ts
 ```
 
 `apps/web/package*.json` add the test-only `fake-indexeddb` dependency. `Reader.tsx` has
@@ -311,9 +324,12 @@ not been touched.
 
 Follows the doc's Dev B staging (§17). One branch per phase; merge to `main` when green.
 
-### Phase 9 — accessibility hardening (§10.2–10.5)
-Typography controls, keyboard completeness, screen-reader semantics, optional read-aloud
-consuming reflow text (never inferring reading order from canvas pixels).
+### Final ownership completion — author/method networks
+
+The expansion ownership list includes author/method networks but gives no dedicated detailed
+feature section. Implement the precision-first deterministic version: coauthor edges only
+from literal reference author lists, and paper→method-section edges only from explicit
+manifest section titles. Add it as a sixth collection research view on its own branch.
 
 ### Deferred, needs coordination
 **Entry point from the reader into `/explore/<digest>`, and honouring the `#page=` fragment

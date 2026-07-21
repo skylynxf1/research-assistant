@@ -1,0 +1,25 @@
+# Python
+.venv/
+__pycache__/
+*.py[cod]
+.pytest_cache/
+
+# Node
+node_modules/
+.next/
+out/
+*.tsbuildinfo
+
+# Blob store (spec D1: content-hash keyed PDFs, manifests, crops)
+/data/
+
+# Golden fixture PDFs are large; ground-truth labels are tracked, PDFs are not
+/fixtures/**/*.pdf
+
+# Env
+.env
+.env.local
+
+# OS
+Thumbs.db
+.DS_Store

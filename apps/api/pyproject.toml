@@ -1,0 +1,19 @@
+[project]
+name = "marginalia-api"
+version = "0.1.0"
+description = "Marginalia extraction pipeline and API"
+readme = "README.md"
+requires-python = ">=3.12"
+dependencies = [
+    "fastapi>=0.139.2",
+    "httpx>=0.28.1",
+    "pymupdf>=1.28.0",
+    "python-multipart>=0.0.32",
+    "uvicorn[standard]>=0.51.0",
+]
+
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]

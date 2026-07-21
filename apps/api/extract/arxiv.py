@@ -52,6 +52,43 @@ def find_arxiv_id(text: str) -> str | None:
     return match.group("id") if match else None
 
 
+_BARE_ID_RE = re.compile(
+    r"^(?:\d{4}\.\d{4,5}(?:v\d+)?|[a-z-]+(?:\.[A-Z]{2})?/\d{7}(?:v\d+)?)$",
+    re.IGNORECASE,
+)
+
+
+def normalize_arxiv_id(raw: str) -> str | None:
+    """Accept an id, an abs/pdf URL, or an "arXiv:" prefix; reject anything else."""
+    candidate = (raw or "").strip()
+    if not candidate:
+        return None
+    if _BARE_ID_RE.match(candidate):
+        return candidate
+    return find_arxiv_id(candidate)
+
+
+def pdf_url(arxiv_id: str) -> str:
+    return f"https://arxiv.org/pdf/{arxiv_id}"
+
+
+def fetch_pdf(arxiv_id: str, *, client: httpx.Client | None = None) -> bytes:
+    """Download a paper's PDF, identifying the client as spec section 6 stage 1 asks."""
+    owned = client is None
+    client = client or httpx.Client(
+        timeout=REQUEST_TIMEOUT,
+        headers={"User-Agent": USER_AGENT},
+        follow_redirects=True,
+    )
+    try:
+        response = client.get(pdf_url(arxiv_id))
+        response.raise_for_status()
+        return response.content
+    finally:
+        if owned:
+            client.close()
+
+
 def normalize_title(title: str) -> str:
     """Fold case and punctuation so two renderings of one title compare equal."""
     return re.sub(r"[^a-z0-9 ]+", " ", (title or "").lower()).strip()

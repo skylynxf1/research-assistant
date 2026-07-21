@@ -5,6 +5,7 @@ import { mountTextLayer, type MountedTextLayer, type PDFDocumentProxy } from "..
 import type { Citation } from "../lib/citations";
 import type { BBox, Mention, PageTextItem } from "../lib/mentions";
 import { captureSelection, type CapturedSelection } from "../lib/selection/dom";
+import { shouldCaptureKeyboardSelection } from "../lib/selection/keyboard";
 
 interface Props {
   doc: PDFDocumentProxy;
@@ -89,13 +90,27 @@ export default function PdfPageView({
       }
     })();
 
-    return () => {
+    const captureCurrentSelection = () => {
+    const root = textLayerRef.current;
+    if (!root) return;
+    const selection = captureSelection(root, pageIndex, textItems);
+    if (selection) onTextSelection(selection);
+  };
+
+  return () => {
       cancelled = true;
       task?.cancel?.();
       textLayer?.cancel();
       textLayerRef.current?.replaceChildren();
     };
   }, [doc, pageIndex, width, active]);
+
+  const captureCurrentSelection = () => {
+    const root = textLayerRef.current;
+    if (!root) return;
+    const selection = captureSelection(root, pageIndex, textItems);
+    if (selection) onTextSelection(selection);
+  };
 
   return (
     <div
@@ -114,11 +129,14 @@ export default function PdfPageView({
       <div
         ref={textLayerRef}
         className="pdf-text-layer"
-        onMouseUp={() => {
-          const root = textLayerRef.current;
-          if (!root) return;
-          const selection = captureSelection(root, pageIndex, textItems);
-          if (selection) onTextSelection(selection);
+        tabIndex={0}
+        role="document"
+        aria-label={`Page ${pageIndex + 1} text`}
+        onMouseUp={captureCurrentSelection}
+        onKeyUp={(event) => {
+          if (shouldCaptureKeyboardSelection(event.key, event.shiftKey)) {
+            captureCurrentSelection();
+          }
         }}
       />
 

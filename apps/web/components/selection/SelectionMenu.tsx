@@ -1,10 +1,12 @@
 "use client";
 
-import { BookOpenText, Copy, Route, X } from "lucide-react";
+import { BookOpenText, Copy, LocateFixed, Route, X } from "lucide-react";
+import { useEffect, useRef } from "react";
 import type { SelectionAnchor } from "../../lib/selection/dom";
 
 interface Props {
   anchor: SelectionAnchor;
+  onEvidenceHunt?: () => void;
   onContext: () => void;
   onTrace: () => void;
   onCopy: () => void;
@@ -16,19 +18,35 @@ const actionClass =
 
 export default function SelectionMenu({
   anchor,
+  onEvidenceHunt,
   onContext,
   onTrace,
   onCopy,
   onClose,
 }: Props) {
+  const toolbarRef = useRef<HTMLDivElement | null>(null);
+
+  // Keyboard text selection has no pointer target to return focus to. Put focus on the
+  // first available action so Enter/Space and Tab can complete the same path.
+  useEffect(() => {
+    toolbarRef.current?.querySelector<HTMLButtonElement>("button")?.focus();
+  }, []);
+
   return (
     <div
+      ref={toolbarRef}
       role="toolbar"
       aria-label="Selection actions"
       className="fixed z-50 flex max-w-[calc(100vw-24px)] -translate-x-1/2 overflow-hidden rounded-md border border-neutral-300 bg-white shadow-xl dark:border-neutral-700 dark:bg-neutral-900"
       style={{ left: anchor.x, top: anchor.y }}
       onMouseDown={(event) => event.preventDefault()}
     >
+      {onEvidenceHunt && (
+        <button type="button" className={actionClass} onClick={onEvidenceHunt} title="Start an Evidence Hunt">
+          <LocateFixed aria-hidden="true" size={15} />
+          Evidence Hunt
+        </button>
+      )}
       <button type="button" className={actionClass} onClick={onContext} title="Show source context">
         <BookOpenText aria-hidden="true" size={15} />
         Context

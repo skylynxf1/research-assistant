@@ -4,6 +4,8 @@ import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { blobUrl, digestOf, loadManifest, pdfUrl } from "../lib/api";
 import { findCitations, type Citation } from "../lib/citations";
 import { evidenceTarget } from "../lib/evidence/navigation";
+import { createEvidenceResolver } from "../lib/evidence/resource";
+import { getPaperLearningIndex } from "../lib/learning/paper-index";
 import { buildConceptThread } from "../lib/learning/threads";
 import type { ConceptThread } from "../lib/learning/types";
 import { buildReverseIndex, findMentions, type Mention, type PageTextItem } from "../lib/mentions";
@@ -16,7 +18,7 @@ import type { CapturedSelection } from "../lib/selection/dom";
 import OverlayCard, { type CardState } from "./OverlayCard";
 import PdfPageView from "./PdfPageView";
 import SelectionActionPanel from "./selection/SelectionActionPanel";
-import SelectionMenu from "./selection/SelectionMenu";
+import ReaderLearningLayer from "./learning/ReaderLearningLayer";
 
 const PAGE_WIDTH = 760;
 /** Render the visible page plus one either side: a 40-page paper must not allocate 40 canvases. */
@@ -101,10 +103,20 @@ export default function Reader({ digest }: { digest: string }) {
     [analysis],
   );
 
+  const learningIndex = useMemo(
+    () => (manifest && analysis.length === manifest.page_count ? getPaperLearningIndex(manifest, analysis) : null),
+    [analysis, manifest],
+  );
+
+  const evidenceResolver = useMemo(
+    () => (learningIndex ? createEvidenceResolver([learningIndex]) : null),
+    [learningIndex],
+  );
+
   const researchContext = useMemo(() => {
     if (!manifest || !selection) return null;
-    return buildResearchContext({ manifest, selection: selection.context, pages: analysis });
-  }, [analysis, manifest, selection]);
+    return buildResearchContext({ manifest, selection: selection.context, pages: analysis, ...(learningIndex ? { index: learningIndex } : {}) });
+  }, [analysis, learningIndex, manifest, selection]);
 
   const openCard = useCallback((assetId: string, hard: boolean) => {
     setCards((previous) => {
@@ -129,8 +141,18 @@ export default function Reader({ digest }: { digest: string }) {
 
   const scrollToPage = useCallback((page: number) => {
     const node = scrollRef.current?.querySelector(`[data-page="${page}"]`);
-    node?.scrollIntoView({ behavior: "smooth", block: "start" });
+    const reduceMotion = window.matchMedia?.("(prefers-reduced-motion: reduce)").matches;
+    node?.scrollIntoView({ behavior: reduceMotion ? "auto" : "smooth", block: "start" });
   }, []);
+
+  const focusPaperSelection = useCallback(() => {
+    const page = selection?.context.page ?? currentPage;
+    scrollToPage(page);
+    window.requestAnimationFrame(() => {
+      const root = scrollRef.current?.querySelector<HTMLElement>(`[data-page="${page}"] .pdf-text-layer`);
+      root?.focus();
+    });
+  }, [currentPage, scrollToPage, selection]);
 
   const navigateToEvidence = useCallback(
     (evidence: SourceEvidence) => {
@@ -273,7 +295,7 @@ export default function Reader({ digest }: { digest: string }) {
     return <p className="p-8 text-red-600">Could not open this paper: {error}</p>;
   }
   if (!manifest || !doc) {
-    return <p className="p-8 opacity-60">Loading paper…</p>;
+    return <p className="p-8 opacity-60">Loading paperâ€¦</p>;
   }
 
   const expandedAsset = expanded ? assetsById.get(expanded) : null;
@@ -287,7 +309,7 @@ export default function Reader({ digest }: { digest: string }) {
           className="rounded px-2 py-1 text-sm hover:bg-neutral-200 dark:hover:bg-neutral-800"
           title="Toggle outline (\\)"
         >
-          ☰
+          â˜°
         </button>
         <h1 className="flex-1 truncate text-sm font-medium">{manifest.title || "Untitled paper"}</h1>
         <span className="text-xs opacity-60">
@@ -302,7 +324,7 @@ export default function Reader({ digest }: { digest: string }) {
           onClick={() => setDark((on) => !on)}
           className="rounded px-2 py-1 text-sm hover:bg-neutral-200 dark:hover:bg-neutral-800"
         >
-          {dark ? "☀" : "☾"}
+          {dark ? "â˜€" : "â˜¾"}
         </button>
       </header>
 
@@ -376,32 +398,17 @@ export default function Reader({ digest }: { digest: string }) {
             <div className="flex items-center gap-2 border-b border-neutral-300 px-3 py-2 dark:border-neutral-800">
               <span className="flex-1 truncate text-sm">{split.title}</span>
               <button type="button" onClick={() => setSplit(null)} aria-label="Close split view">
-                ×
+                Ã—
               </button>
             </div>
             {split.digest ? (
               <iframe title={split.title} src={pdfUrl(split.digest)} className="flex-1" />
             ) : (
-              <p className="p-4 text-sm opacity-60">Fetching the cited paper…</p>
+              <p className="p-4 text-sm opacity-60">Fetching the cited paperâ€¦</p>
             )}
           </aside>
         )}
       </div>
-
-      {selection?.menuOpen && (
-        <SelectionMenu
-          anchor={selection.anchor}
-          onContext={openSelectionContext}
-          onTrace={openConceptThread}
-          onCopy={() => {
-            void navigator.clipboard?.writeText(selection.context.text);
-            setSelection((current) => (current ? { ...current, menuOpen: false } : null));
-          }}
-          onClose={() =>
-            setSelection((current) => (current ? { ...current, menuOpen: false } : null))
-          }
-        />
-      )}
 
       {selectionPanel && (
         <SelectionActionPanel
@@ -413,6 +420,23 @@ export default function Reader({ digest }: { digest: string }) {
           onClose={() => setSelectionPanel(null)}
         />
       )}
+
+      <ReaderLearningLayer
+        selection={selection}
+        context={researchContext}
+        index={learningIndex}
+        resolver={evidenceResolver}
+        onSelectionMenuOpenChange={(open) => setSelection((current) => (current ? { ...current, menuOpen: open } : null))}
+        onOpenContext={openSelectionContext}
+        onOpenTrace={openConceptThread}
+        onCopy={() => {
+          if (selection) void navigator.clipboard?.writeText(selection.context.text);
+          setSelection((current) => (current ? { ...current, menuOpen: false } : null));
+        }}
+        onNavigateEvidence={(evidence) => navigateToEvidence(evidence.source)}
+        onFocusPaper={focusPaperSelection}
+        onRestorePaperPage={scrollToPage}
+      />
 
       {cards.map((card, index) => {
         const asset = assetsById.get(card.assetId);

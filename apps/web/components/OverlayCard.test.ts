@@ -132,8 +132,8 @@ describe("transitionPopup", () => {
 });
 
 describe("OverlayCard", () => {
-  const renderCard = (dark: boolean) => renderToStaticMarkup(createElement(OverlayCard, {
-    asset,
+  const renderCard = (dark: boolean, cardAsset = asset) => renderToStaticMarkup(createElement(OverlayCard, {
+    asset: cardAsset,
     popup,
     dark,
     mentions: [{ assetId: "fig-1", kind: "figure", number: "1", page: 4, text: "Figure 1", rect: null, index: 0 }],
@@ -158,11 +158,26 @@ describe("OverlayCard", () => {
     const markup = renderCard(false);
 
     expect(markup).toContain('data-popup-asset="fig-1"');
-    expect(markup).toContain("fixed overflow-hidden rounded-[20px]");
+    expect(markup).toContain("fixed h-[336px] flex flex-col overflow-hidden rounded-[20px]");
     expect(markup).toContain("rounded-[12px] bg-white");
     expect(markup).toContain("Auto · fades on scroll");
     expect(markup).toContain("Jump to Figure 1");
     expect(markup).toContain("p.5");
+  });
+
+  it("keeps variable figure content inside the 336px collision-model height", () => {
+    const markup = renderCard(false, {
+      ...asset,
+      caption: `A long caption. ${"More caption text. ".repeat(80)}`,
+    });
+
+    expect(markup).toContain("h-[336px] flex flex-col");
+    expect(markup).toContain("shrink-0");
+    expect(markup).toContain("flex min-h-[96px] flex-1");
+    expect(markup).toContain("h-full max-h-full w-full bg-white object-contain");
+    expect(markup).toContain("max-h-[104px] min-h-0 shrink overflow-y-auto");
+    expect(markup).toContain("shrink-0 overflow-x-auto");
+    expect(markup).toContain("More caption text.");
   });
 
   it("renders explicit light glass without media-dark popup classes", () => {

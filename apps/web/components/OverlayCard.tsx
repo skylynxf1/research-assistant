@@ -179,7 +179,7 @@ export default function OverlayCard(props: Props) {
     <article
       ref={rootRef}
       data-popup-asset={props.asset.asset_id}
-      className={`fixed overflow-hidden rounded-[20px] border shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_24px_70px_rgba(15,23,42,0.22)] backdrop-blur-[28px] backdrop-saturate-[1.6] pointer-events-auto ${
+      className={`fixed h-[336px] flex flex-col overflow-hidden rounded-[20px] border shadow-[0_0_0_1px_rgba(15,23,42,0.06),0_24px_70px_rgba(15,23,42,0.22)] backdrop-blur-[28px] backdrop-saturate-[1.6] pointer-events-auto ${
         props.dark
           ? "border-white/15 bg-slate-900/75"
           : "border-white/95 bg-white/70"
@@ -193,7 +193,7 @@ export default function OverlayCard(props: Props) {
       onPointerDown={onRaise}
     >
       <header
-        className="flex cursor-grab touch-none select-none items-center gap-2 px-[18px] pb-2 pt-3 active:cursor-grabbing"
+        className="flex shrink-0 cursor-grab touch-none select-none items-center gap-2 px-[18px] pb-2 pt-3 active:cursor-grabbing"
         onPointerDown={onPointerDown}
         onPointerMove={onPointerMove}
         onPointerUp={() => {
@@ -243,15 +243,15 @@ export default function OverlayCard(props: Props) {
         </button>
       </header>
 
-      <div className="mx-[18px] overflow-hidden rounded-[12px] bg-white p-1">
+      <div className="mx-[18px] flex min-h-[96px] flex-1 items-center justify-center overflow-hidden rounded-[12px] bg-white p-1">
         <img
           src={blobUrl(props.asset.image_url)}
           alt={props.asset.caption}
-          className="max-h-80 w-full bg-white object-contain"
+          className="h-full max-h-full w-full bg-white object-contain"
         />
       </div>
 
-      <div className="px-[18px] pb-3 pt-2">
+      <div className="max-h-[104px] min-h-0 shrink overflow-y-auto px-[18px] pb-3 pt-2">
         <p className={`text-[12.5px] leading-[1.55] ${props.dark ? "text-slate-200" : "text-slate-700"}`}>
           {props.asset.caption}
         </p>
@@ -265,8 +265,8 @@ export default function OverlayCard(props: Props) {
         </button>
       </div>
 
-      <footer className={`flex flex-wrap items-center gap-1 border-t px-[18px] py-2 ${props.dark ? "border-white/10" : "border-slate-900/10"}`}>
-        <span className="mr-1 text-[11px] text-slate-400">
+      <footer className={`flex shrink-0 overflow-x-auto flex-nowrap items-center gap-1 border-t px-[18px] py-2 ${props.dark ? "border-white/10" : "border-slate-900/10"}`}>
+        <span className="mr-1 shrink-0 text-[11px] text-slate-400">
           {popup.mode === "pinned" ? "Pinned" : "Auto · fades on scroll"}
         </span>
         {props.mentions.map((mention) => (
@@ -274,7 +274,7 @@ export default function OverlayCard(props: Props) {
             key={`${mention.page}-${mention.index}`}
             type="button"
             onClick={() => onJumpToMention(mention)}
-            className={`rounded-full px-2 py-1 text-[11px] font-semibold focus-visible:outline-2 focus-visible:outline-[#3b5bdb] ${
+            className={`shrink-0 rounded-full px-2 py-1 text-[11px] font-semibold focus-visible:outline-2 focus-visible:outline-[#3b5bdb] ${
               mention.page === props.currentPage
                 ? "bg-[#3b5bdb] text-white"
                 : props.dark

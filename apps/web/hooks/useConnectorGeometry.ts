@@ -17,6 +17,15 @@ export interface MeasuredConnector {
   path: string;
 }
 
+export function cancelConnectorFrame(
+  frame: { current: number | null },
+  cancel: (handle: number) => void,
+): void {
+  if (frame.current === null) return;
+  cancel(frame.current);
+  frame.current = null;
+}
+
 function isVisible(rect: RectLike): boolean {
   return rect.bottom > 0 && rect.top < window.innerHeight && rect.right > 0 && rect.left < window.innerWidth;
 }
@@ -97,7 +106,7 @@ export function useConnectorGeometry(targets: ConnectorTarget[]): MeasuredConnec
       window.removeEventListener("resize", onDirty);
       window.removeEventListener("marginalia:connector-dirty", onDirty);
       mutationObserver.disconnect();
-      if (frameRef.current !== null) window.cancelAnimationFrame(frameRef.current);
+      cancelConnectorFrame(frameRef, window.cancelAnimationFrame);
     };
   }, [markDirty]);
 

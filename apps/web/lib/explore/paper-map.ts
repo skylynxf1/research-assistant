@@ -41,6 +41,11 @@ export interface PaperMapModel {
 
 const UNSECTIONED_ID = "unsectioned";
 
+/** A navigation affordance exists only when extraction explicitly confirmed both fields. */
+export function openableArxivId(reference: Reference): string | null {
+  return reference.openable && reference.arxiv_id ? reference.arxiv_id : null;
+}
+
 function sectionNode(
   id: string,
   title: string,

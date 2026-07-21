@@ -9,7 +9,7 @@ import { describe, expect, it } from "vitest";
 import type { Citation } from "../citations";
 import type { Asset, Manifest, Reference } from "../manifest";
 import type { Mention } from "../mentions";
-import { buildPaperMap } from "./paper-map";
+import { buildPaperMap, openableArxivId } from "./paper-map";
 
 function asset(
   overrides: Partial<Asset> & Pick<Asset, "asset_id" | "kind" | "page">,
@@ -167,6 +167,13 @@ describe("section-local citations", () => {
       arxiv_id: null,
       openable: false,
     });
+  });
+
+  it("opens only references that explicitly resolved to an arXiv paper", () => {
+    expect(openableArxivId(REF_OPEN)).toBe("2401.00001");
+    expect(openableArxivId(REF_CLOSED)).toBeNull();
+    expect(openableArxivId({ ...REF_OPEN, openable: false })).toBeNull();
+    expect(openableArxivId({ ...REF_OPEN, arxiv_id: null })).toBeNull();
   });
 });
 

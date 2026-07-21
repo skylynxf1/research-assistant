@@ -25,5 +25,5 @@ Thumbs.db
 .DS_Store
 
 # Local screenshot/debug artifacts
-/apps/web/.playwright-mcp/
+.playwright-mcp/
 *.local.png

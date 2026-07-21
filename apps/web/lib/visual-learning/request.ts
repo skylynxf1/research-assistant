@@ -29,6 +29,35 @@ export interface VisualGenerationOptions {
 
 type SourceChallengeEvidence = ChallengeEvidence & { source: SourceEvidence };
 
+const MODEL_TEXT_LIMITS = {
+  selection: 4_000,
+  sourceWindow: 4_000,
+  sourceEvidence: 3_000,
+  threadOccurrence: 1_200,
+  caption: 2_000,
+  citation: 1_000,
+  graphLabel: 500,
+} as const;
+
+/**
+ * Keep model input bounded without changing the canonical evidence identity. pdf.js can
+ * occasionally group most of a page into one passage; that full literal passage remains
+ * in the local index while the model receives a contiguous excerpt around the selection.
+ */
+export function boundedModelExcerpt(text: string, maximum: number, anchor?: string): string {
+  const normalized = text.normalize("NFKC").replace(/\s+/g, " ").trim();
+  if (normalized.length <= maximum) return normalized;
+
+  const normalizedAnchor = anchor?.normalize("NFKC").replace(/\s+/g, " ").trim();
+  const anchorIndex = normalizedAnchor ? normalized.indexOf(normalizedAnchor.slice(0, Math.min(normalizedAnchor.length, 240))) : -1;
+  const center = anchorIndex >= 0 ? anchorIndex + Math.min(normalizedAnchor?.length ?? 0, maximum) / 2 : maximum / 2;
+  const prefix = center > maximum / 2 ? "… " : "";
+  const suffix = center + maximum / 2 < normalized.length ? " …" : "";
+  const contentLength = maximum - prefix.length - suffix.length;
+  const start = Math.max(0, Math.min(normalized.length - contentLength, Math.round(center - contentLength / 2)));
+  return `${prefix}${normalized.slice(start, start + contentLength).trim()}${suffix}`.slice(0, maximum);
+}
+
 function resolvedOnly(items: ChallengeEvidence[], resolver: EvidenceResolver): SourceChallengeEvidence[] {
   return items.filter((item): item is SourceChallengeEvidence => isSourceEvidence(item.source) && resolver.resolve(item).status === "resolved");
 }
@@ -102,13 +131,13 @@ export function createVisualGenerationRequest(
   const graphNodes = localEvidenceGraph?.nodes.flatMap((node) => {
     if (!graphNodeTypes.has(node.type)) return [];
     const ids = (node.evidence ?? (node.source ? [node.source] : [])).map(evidenceKey).filter((id) => evidenceIds.has(id));
-    return ids.length ? [{ id: node.id, type: node.type as "claim", label: node.label, evidenceIds: ids }] : [];
+    return ids.length ? [{ id: node.id, type: node.type as "claim", label: boundedModelExcerpt(node.label, MODEL_TEXT_LIMITS.graphLabel), evidenceIds: ids }] : [];
   }) ?? [];
   const graphNodeIds = new Set(graphNodes.map((node) => node.id));
   const graphEdges = localEvidenceGraph?.edges.flatMap((edge) => {
     const ids = edge.evidence.map(evidenceKey).filter((id) => evidenceIds.has(id));
     if (!graphNodeIds.has(edge.source) || !graphNodeIds.has(edge.target) || !ids.length) return [];
-    return [{ id: edge.id, source: edge.source, target: edge.target, type: edge.type as "supports", provenance: edge.provenance, evidenceIds: ids, reason: edge.reason ?? "Verified graph relationship" }];
+    return [{ id: edge.id, source: edge.source, target: edge.target, type: edge.type as "supports", provenance: edge.provenance, evidenceIds: ids, reason: boundedModelExcerpt(edge.reason ?? "Verified graph relationship", MODEL_TEXT_LIMITS.graphLabel) }];
   }) ?? [];
 
   const request: VisualGenerationRequest = {
@@ -121,12 +150,16 @@ export function createVisualGenerationRequest(
     learningObjective: options.learningObjective ?? `Understand ${selectedConcept ?? "the selected source passage"} by manipulating its verified structure.`,
     difficulty: options.difficulty ?? "medium",
     learningMode: options.learningMode,
-    selection: { text: context.selection.text, page: context.selection.page },
+    selection: { text: boundedModelExcerpt(context.selection.text, MODEL_TEXT_LIMITS.selection), page: context.selection.page },
     ...(context.section ? { section: { id: context.section.sectionId, title: context.section.title, page: context.section.page } } : {}),
     sourceWindow: context.surroundingPassages.slice(0, 7).map((passage) => ({
       id: passage.id,
       page: passage.page,
-      text: passage.text,
+      text: boundedModelExcerpt(
+        passage.text,
+        MODEL_TEXT_LIMITS.sourceWindow,
+        passage.id === context.sourceWindow.selected?.id ? context.selection?.text : undefined,
+      ),
       ...(passage.sectionId ? { sectionId: passage.sectionId } : {}),
     })),
     concepts: conceptObjects.slice(0, 16).map((object) => ({ id: object.id, label: object.label })),
@@ -135,7 +168,7 @@ export function createVisualGenerationRequest(
         concept: thread.concept.label,
         occurrences: thread.occurrences.slice(0, 12).flatMap((occurrence) => {
           const match = uniqueEvidence.find((item) => item.source.kind === "passage" && item.source.text === occurrence.passage.text);
-          return match ? [{ id: occurrence.id, page: occurrence.page, text: occurrence.passage.text, evidenceId: match.id }] : [];
+          return match ? [{ id: occurrence.id, page: occurrence.page, text: boundedModelExcerpt(occurrence.passage.text, MODEL_TEXT_LIMITS.threadOccurrence), evidenceId: match.id }] : [];
         }),
       },
     } : {}),
@@ -149,13 +182,26 @@ export function createVisualGenerationRequest(
         kind: asset.kind,
         label: asset.label,
         page: asset.page,
-        caption: asset.caption,
+        caption: boundedModelExcerpt(asset.caption, MODEL_TEXT_LIMITS.caption),
         evidenceIds: ids,
         imageUrl: asset.image_url,
       }];
     }),
-    citations: context.citations.slice(0, 12).map((citation) => ({ refIds: citation.refIds, text: citation.text, page: citation.page })),
-    sourceEvidence: uniqueEvidence.map((item) => ({ id: item.id, reason: item.reason, source: item.source })),
+    citations: context.citations.slice(0, 12).map((citation) => ({ refIds: citation.refIds, text: boundedModelExcerpt(citation.text, MODEL_TEXT_LIMITS.citation), page: citation.page })),
+    sourceEvidence: uniqueEvidence.map((item) => ({
+      id: item.id,
+      reason: item.reason,
+      source: item.source.text
+        ? {
+            ...item.source,
+            text: boundedModelExcerpt(
+              item.source.text,
+              MODEL_TEXT_LIMITS.sourceEvidence,
+              item.source.kind === "passage" && item.source.page === context.selection?.page ? context.selection?.text : undefined,
+            ),
+          }
+        : item.source,
+    })),
     ...(selectedClaim && graphNodes.some((node) => node.id === selectedClaim.id) ? { evidenceGraph: { rootClaimId: selectedClaim.id, nodes: graphNodes, edges: graphEdges } } : {}),
     ...(options.existingVisualLearningSpec ? { existingVisualLearningSpec: options.existingVisualLearningSpec } : {}),
   };

@@ -40,8 +40,20 @@ function evidenceForId(request: VisualGenerationRequest, index: PaperLearningInd
   const item = request.sourceEvidence.find((candidate) => candidate.id === id);
   if (!item) return null;
   if (item.source.kind === "passage") {
-    const passage = index.passages.find((candidate) => candidate.page === item.source.page && candidate.text === item.source.text);
-    return challengeEvidence(item.source, item.reason, ...(passage ? [{ kind: "passage" as const, resourceId: passage.id }] : []));
+    // The generation request contains a bounded excerpt, but the evidence id was created
+    // from the full indexed passage. Restore that canonical source before navigation so
+    // the details panel and exact PDF highlight never point at a truncated copy.
+    const passage = index.passages.find((candidate) => evidenceKey(passageEvidence(index.paperId, candidate.page, candidate.text, {
+      ...(candidate.bbox ? { bbox: candidate.bbox } : {}),
+      ...(candidate.sectionId ? { sectionId: candidate.sectionId } : {}),
+    })) === id);
+    if (passage) {
+      return challengeEvidence(passageEvidence(index.paperId, passage.page, passage.text, {
+        ...(passage.bbox ? { bbox: passage.bbox } : {}),
+        ...(passage.sectionId ? { sectionId: passage.sectionId } : {}),
+      }), item.reason, { kind: "passage", resourceId: passage.id });
+    }
+    return challengeEvidence(item.source, item.reason);
   }
   if (item.source.kind === "citation" && item.source.refId) {
     return challengeEvidence(item.source, item.reason, { kind: "citation", resourceId: item.source.refId });

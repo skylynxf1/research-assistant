@@ -1,0 +1,10 @@
+project_id = "marginalia"
+
+[storage]
+enabled = true
+file_size_limit = "30MiB"
+
+[storage.buckets."marginalia-papers"]
+public = false
+file_size_limit = "30MiB"
+allowed_mime_types = ["application/pdf", "application/json", "image/png"]

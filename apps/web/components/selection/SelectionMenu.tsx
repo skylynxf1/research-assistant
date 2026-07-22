@@ -73,11 +73,11 @@ export default function SelectionMenu({
           Evidence Hunt
         </button>
       )}
-      <button type="button" className={actionClass} onClick={onContext} title="Explain from surrounding source context">
+      <button type="button" data-tour="act-explain" className={actionClass} onClick={onContext} title="Explain from surrounding source context">
         <BookOpenText aria-hidden="true" size={15} />
         Explain
       </button>
-      <button type="button" className={actionClass} onClick={onTrace} title="Trace through paper">
+      <button type="button" data-tour="act-trace" className={actionClass} onClick={onTrace} title="Trace through paper">
         <Route aria-hidden="true" size={15} />
         Trace
       </button>
@@ -88,7 +88,7 @@ export default function SelectionMenu({
         </button>
       )}
       {onVisualize && (
-        <button type="button" className={actionClass} onClick={onVisualize} title="Visualize this source concept">
+        <button type="button" data-tour="act-visualize" className={actionClass} onClick={onVisualize} title="Visualize this source concept">
           <BookOpenText aria-hidden="true" size={15} />
           Visualize
         </button>

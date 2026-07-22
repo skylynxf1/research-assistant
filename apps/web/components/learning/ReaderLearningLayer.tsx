@@ -40,9 +40,9 @@ function evidenceDescription(evidence: ChallengeEvidence, resolver: EvidenceReso
   if (resolved?.status === "resolved") {
     return [resolved.label, location, resolved.section?.title, resolved.excerpt]
       .filter(Boolean)
-      .join(" Â· ");
+      .join(" \u00b7 ");
   }
-  return `${evidence.source.kind} Â· ${location}`;
+  return `${evidence.source.kind} \u00b7 ${location}`;
 }
 
 /**

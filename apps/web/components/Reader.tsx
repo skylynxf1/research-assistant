@@ -30,6 +30,7 @@ import OverlayCard, { type CardState } from "./OverlayCard";
 import PdfPageView from "./PdfPageView";
 import SelectionActionPanel from "./selection/SelectionActionPanel";
 import ReaderLearningLayer from "./learning/ReaderLearningLayer";
+import ResearchBuddy from "./buddy/ResearchBuddy";
 
 /** Render the visible page plus one either side: a 40-page paper must not allocate 40 canvases. */
 const RENDER_WINDOW = 1;
@@ -115,6 +116,16 @@ export default function Reader({ digest }: { digest: string }) {
     () => buildReverseIndex(analysis.flatMap((page) => page.mentions)),
     [analysis],
   );
+
+  // The onboarding tour points at the paper's very first figure/table reference, not
+  // merely the first one per page (every page renders its own mention list).
+  const firstMentionId = useMemo(() => {
+    for (let page = 0; page < analysis.length; page += 1) {
+      const mention = analysis[page]?.mentions.find((item) => item.assetId !== null && item.rect !== null);
+      if (mention) return mentionAnchorId(mention.assetId as string, page, mention.index);
+    }
+    return null;
+  }, [analysis]);
 
   const learningIndex = useMemo(
     () => (manifest && analysis.length === manifest.page_count ? getPaperLearningIndex(manifest, analysis) : null),
@@ -370,7 +381,7 @@ export default function Reader({ digest }: { digest: string }) {
     return <p className="p-8 text-red-600">Could not open this paper: {error}</p>;
   }
   if (!manifest || !doc) {
-    return <p className="p-8 opacity-60">Loading paperâ€¦</p>;
+    return <p className="p-8 opacity-60">Loading paper...</p>;
   }
 
   const expandedAsset = expanded ? assetsById.get(expanded) : null;
@@ -385,13 +396,13 @@ export default function Reader({ digest }: { digest: string }) {
           title="Toggle outline (\\)"
           aria-label="Toggle paper outline"
         >
-          â˜°
+          {"\u2630"}
         </button>
         <h1 className="min-w-0 flex-1 truncate text-sm font-medium">{manifest.title || "Untitled paper"}</h1>
         <nav className="order-last flex w-full items-center gap-1 sm:order-none sm:w-auto" aria-label="Primary product views">
-          <a aria-current="page" href={paperHref(digest)} className="rounded bg-neutral-900 px-2 py-1 text-xs text-white dark:bg-white dark:text-neutral-950">Read</a>
-          <a href={`/explore/${digest}`} className="rounded px-2 py-1 text-xs hover:bg-neutral-200 dark:hover:bg-neutral-800">Explore</a>
-          <a href={`/workspace/${digest}`} className="rounded px-2 py-1 text-xs hover:bg-neutral-200 dark:hover:bg-neutral-800">Workspace</a>
+          <a aria-current="page" data-tour="nav-read" href={paperHref(digest)} className="rounded bg-neutral-900 px-2 py-1 text-xs text-white dark:bg-white dark:text-neutral-950">Read</a>
+          <a data-tour="nav-explore" href={`/explore/${digest}`} className="rounded px-2 py-1 text-xs hover:bg-neutral-200 dark:hover:bg-neutral-800">Explore</a>
+          <a data-tour="nav-workspace" href={`/workspace/${digest}`} className="rounded px-2 py-1 text-xs hover:bg-neutral-200 dark:hover:bg-neutral-800">Workspace</a>
           <a href={`/reflow/${digest}`} className="rounded px-2 py-1 text-xs hover:bg-neutral-200 dark:hover:bg-neutral-800">Reflow</a>
         </nav>
         <span className="text-xs opacity-60">
@@ -407,7 +418,7 @@ export default function Reader({ digest }: { digest: string }) {
           className="rounded px-2 py-1 text-sm hover:bg-neutral-200 dark:hover:bg-neutral-800"
           aria-label={dark ? "Use light appearance" : "Use dark appearance"}
         >
-          {dark ? "â˜€" : "â˜¾"}
+          {dark ? "\u2600" : "\u263e"}
         </button>
         <span className="sr-only" aria-live="polite">{pinStatus}</span>
       </header>
@@ -446,6 +457,7 @@ export default function Reader({ digest }: { digest: string }) {
 
         <div
           ref={scrollRef}
+          data-tour="paper"
           className="min-w-0 flex-1 overflow-y-auto p-2 sm:p-4 lg:p-6"
           onScroll={() =>
             setSelection((current) =>
@@ -473,6 +485,7 @@ export default function Reader({ digest }: { digest: string }) {
               }}
               highlightedAssetId={focused}
               evidenceBBox={activeEvidence?.page === index ? activeEvidence.bbox : undefined}
+              tourAnchorMentionId={firstMentionId}
             />
           ))}
         </div>
@@ -482,13 +495,13 @@ export default function Reader({ digest }: { digest: string }) {
             <div className="flex items-center gap-2 border-b border-neutral-300 px-3 py-2 dark:border-neutral-800">
               <span className="flex-1 truncate text-sm">{split.title}</span>
               <button type="button" onClick={() => setSplit(null)} aria-label="Close split view">
-                Ã—
+                {"\u00d7"}
               </button>
             </div>
             {split.digest ? (
               <iframe title={split.title} src={pdfUrl(split.digest)} className="flex-1" />
             ) : (
-              <p className="p-4 text-sm opacity-60">Fetching the cited paperâ€¦</p>
+              <p className="p-4 text-sm opacity-60">Fetching the cited paper...</p>
             )}
           </aside>
         )}
@@ -578,6 +591,8 @@ export default function Reader({ digest }: { digest: string }) {
           </p>
         </div>
       )}
+
+      <ResearchBuddy dark={dark} />
     </div>
   );
 }

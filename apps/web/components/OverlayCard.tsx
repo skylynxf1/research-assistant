@@ -82,6 +82,7 @@ export default function OverlayCard({
 
   return (
     <aside
+      data-tour="figure-card"
       aria-label={`${asset.label} source card`}
       className={`fixed z-40 w-[min(20rem,calc(100vw-1rem))] rounded-lg border shadow-2xl backdrop-blur-md transition-shadow ${
         focused

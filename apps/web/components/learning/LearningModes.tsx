@@ -129,7 +129,7 @@ export default function LearningModes({
   };
 
   return (
-    <aside className="fixed bottom-4 right-4 z-30 w-[min(360px,calc(100vw-32px))] max-md:inset-x-3 max-md:bottom-3 max-md:w-auto text-neutral-900 dark:text-neutral-100">
+    <aside data-tour="learn-tab" className="fixed bottom-4 right-4 z-30 w-[min(360px,calc(100vw-32px))] max-md:inset-x-3 max-md:bottom-3 max-md:w-auto text-neutral-900 dark:text-neutral-100">
       <div className="flex overflow-hidden rounded-md border border-neutral-300 bg-white/95 shadow-lg backdrop-blur dark:border-neutral-700 dark:bg-neutral-950/95">
         {(["read", "learn", "quest"] as const).map((candidate) => (
           <button
@@ -137,6 +137,10 @@ export default function LearningModes({
             type="button"
             aria-pressed={mode === candidate}
             onClick={() => {
+              if (candidate !== "read" && mode === candidate) {
+                setMode("read");
+                return;
+              }
               setMode(candidate);
               if (candidate === "read") setUnderstand(null);
             }}

@@ -22,6 +22,8 @@ interface Props {
   onTextSelection: (selection: CapturedSelection) => void;
   highlightedAssetId: string | null;
   evidenceBBox?: BBox;
+  /** Marks the paper's very first figure/table mention as the onboarding tour anchor. */
+  tourAnchorMentionId?: string | null;
 }
 
 /**
@@ -45,6 +47,7 @@ export default function PdfPageView({
   onTextSelection,
   highlightedAssetId,
   evidenceBBox,
+  tourAnchorMentionId,
 }: Props) {
   const canvasRef = useRef<HTMLCanvasElement | null>(null);
   const textLayerRef = useRef<HTMLDivElement | null>(null);
@@ -155,6 +158,7 @@ export default function PdfPageView({
 
       {mentions
         .filter((mention) => mention.assetId !== null && mention.rect !== null)
+<<<<<<< Updated upstream
         .map((mention, i) => (
           <button
             key={`m-${i}`}
@@ -174,6 +178,34 @@ export default function PdfPageView({
             }}
           />
         ))}
+=======
+        .map((mention, i) => {
+          const assetId = mention.assetId as string;
+          const mentionId = `${assetId}:p${pageIndex}:m${mention.index}`;
+          return (
+            <button
+              key={`m-${i}`}
+              data-mention-id={mentionId}
+              data-mention-asset={assetId}
+              data-tour={mentionId === tourAnchorMentionId ? "figure-mention" : undefined}
+              type="button"
+              title={`Open ${mention.text}`}
+              onClick={() => onOpenAsset(assetId, mentionId)}
+              className={`absolute z-30 cursor-pointer border-b-2 transition-colors ${
+                highlightedAssetId === mention.assetId
+                  ? "border-amber-500 bg-amber-300/25"
+                  : "border-sky-500/60 hover:bg-sky-400/20"
+              }`}
+              style={{
+                left: `${mention.rect![0] * 100}%`,
+                top: `${mention.rect![1] * 100}%`,
+                width: `${(mention.rect![2] - mention.rect![0]) * 100}%`,
+                height: `${(mention.rect![3] - mention.rect![1]) * 100}%`,
+              }}
+            />
+          );
+        })}
+>>>>>>> Stashed changes
 
       {citations
         .filter((citation) => citation.openable && citation.rect !== null)

@@ -13,7 +13,6 @@
     "visual:qa:watch": "tsx scripts/visual-qa.ts --watch"
   },
   "dependencies": {
-    "@xyflow/react": "^12.11.2",
     "lucide-react": "^1.25.0",
     "next": "16.2.10",
     "pdfjs-dist": "^6.1.200",

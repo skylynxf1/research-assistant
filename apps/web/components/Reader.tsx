@@ -23,6 +23,7 @@ import {
 } from "../lib/evidence/source";
 import type { CapturedSelection } from "../lib/selection/dom";
 import { responsivePageWidth } from "../lib/reader/layout";
+import { mentionAnchorId } from "../lib/reader/figure-navigation";
 import { readerScrollBehavior } from "../lib/reader/motion";
 import { IndexedDbWorkspaceRepository } from "../lib/workspace/indexed-db";
 import { pinVerifiedEvidence } from "../lib/workspace/pinning";

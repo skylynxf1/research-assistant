@@ -158,27 +158,6 @@ export default function PdfPageView({
 
       {mentions
         .filter((mention) => mention.assetId !== null && mention.rect !== null)
-<<<<<<< Updated upstream
-        .map((mention, i) => (
-          <button
-            key={`m-${i}`}
-            type="button"
-            title={`Open ${mention.text}`}
-            onClick={() => onOpenAsset(mention.assetId as string)}
-            className={`absolute z-30 cursor-pointer border-b-2 transition-colors ${
-              highlightedAssetId === mention.assetId
-                ? "border-amber-500 bg-amber-300/25"
-                : "border-sky-500/60 hover:bg-sky-400/20"
-            }`}
-            style={{
-              left: `${mention.rect![0] * 100}%`,
-              top: `${mention.rect![1] * 100}%`,
-              width: `${(mention.rect![2] - mention.rect![0]) * 100}%`,
-              height: `${(mention.rect![3] - mention.rect![1]) * 100}%`,
-            }}
-          />
-        ))}
-=======
         .map((mention, i) => {
           const assetId = mention.assetId as string;
           const mentionId = `${assetId}:p${pageIndex}:m${mention.index}`;
@@ -190,7 +169,7 @@ export default function PdfPageView({
               data-tour={mentionId === tourAnchorMentionId ? "figure-mention" : undefined}
               type="button"
               title={`Open ${mention.text}`}
-              onClick={() => onOpenAsset(assetId, mentionId)}
+              onClick={() => onOpenAsset(assetId)}
               className={`absolute z-30 cursor-pointer border-b-2 transition-colors ${
                 highlightedAssetId === mention.assetId
                   ? "border-amber-500 bg-amber-300/25"
@@ -205,7 +184,6 @@ export default function PdfPageView({
             />
           );
         })}
->>>>>>> Stashed changes
 
       {citations
         .filter((citation) => citation.openable && citation.rect !== null)
